@@ -1,4 +1,3 @@
-
 package com.example.ThesisBackend.security;
 
 import org.springframework.context.annotation.Bean;
@@ -11,9 +10,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.ThesisBackend.security.JwtAuthenticationFilter;
-
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class SecurityConfig {
@@ -26,9 +25,27 @@ public class SecurityConfig {
         this.studentDetailsService = studentDetailsService;
     }
 
+    // ✅ 1. Global CORS configuration
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        // ✅ Allow your frontend origin (React / Expo Web)
+                        .allowedOriginPatterns("http://localhost:8081")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+            }
+        };
+    }
+
+    // ✅ 2. Security filter chain
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {}) // ✅ Explicitly enable CORS
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
@@ -41,11 +58,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // ✅ 3. Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // strength default 10
+        return new BCryptPasswordEncoder(12);
     }
 
+    // ✅ 4. Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
