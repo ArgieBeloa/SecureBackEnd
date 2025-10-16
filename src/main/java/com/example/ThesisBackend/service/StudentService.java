@@ -286,6 +286,46 @@ public class StudentService {
         return student;
     }
 
+   // DELETE
+   public StudentModel deleteStudentNotificationById(String studentId, String notificationId, String requesterStudentNumber, String role) {
+       // 🔍 Find student
+       Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
+
+       if (studentOpt.isEmpty()) {
+           throw new RuntimeException("❌ Student not found with ID: " + studentId);
+       }
+
+       StudentModel student = studentOpt.get();
+
+       // 🔒 Check role permissions
+       boolean isStudentSelf = student.getStudentNumber().equals(requesterStudentNumber);
+       boolean isOfficerOrAdmin = "OFFICER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+
+       if (!isStudentSelf && !isOfficerOrAdmin) {
+           throw new RuntimeException("🚫 Unauthorized: Only the student, officer, or admin can delete notifications.");
+       }
+
+       // 🧾 Check if list exists or is empty
+       if (student.getStudentNotifications() == null || student.getStudentNotifications().isEmpty()) {
+           throw new RuntimeException("⚠️ No notifications found for this student.");
+       }
+
+       // 🗑️ Remove the notification
+       boolean removed = student.getStudentNotifications().removeIf(
+               notif -> notif.getEventId().equals(notificationId)
+       );
+
+       if (!removed) {
+           throw new RuntimeException("❌ Notification not found with ID: " + notificationId);
+       }
+
+       // 💾 Save updated student
+       studentRepository.save(student);
+
+       System.out.println("✅ Notification deleted by " + role + " for student: " + student.getStudentName());
+       return student;
+   }
+
 
 
 

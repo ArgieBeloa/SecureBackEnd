@@ -1,6 +1,6 @@
 package com.example.ThesisBackend.Model;
 
-import com.example.ThesisBackend.eventUtils.EventAttendance;
+import com.example.ThesisBackend.eventUtils.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -22,9 +22,14 @@ public class EventModel {
     private String eventLocation;
     private String eventCategory;
     private String eventTimeLength;
+    private EventOrganizer eventOrganizer;
 
     // Array of class
     private List<EventAttendance> eventAttendances;
+    private  List<EventAgenda> eventAgendas;
+    private List<EvaluationQuestion> evaluationQuestions;
+    private List<EventEvaluationDetails> eventEvaluationDetails;
+
 
 
     // Getters and Setters
@@ -113,5 +118,37 @@ public class EventModel {
 
     public void setEventAttendances(List<EventAttendance> eventAttendances) {
         this.eventAttendances = eventAttendances;
+    }
+
+    public List<EvaluationQuestion> getEvaluationQuestions() {
+        return evaluationQuestions;
+    }
+
+    public void setEvaluationQuestions(List<EvaluationQuestion> evaluationQuestions) {
+        this.evaluationQuestions = evaluationQuestions;
+    }
+
+    public List<EventAgenda> getEventAgendas() {
+        return eventAgendas;
+    }
+
+    public void setEventAgendas(List<EventAgenda> eventAgendas) {
+        this.eventAgendas = eventAgendas;
+    }
+
+    public List<EventEvaluationDetails> getEventEvaluationDetails() {
+        return eventEvaluationDetails;
+    }
+
+    public void setEventEvaluationDetails(List<EventEvaluationDetails> eventEvaluationDetails) {
+        this.eventEvaluationDetails = eventEvaluationDetails;
+    }
+
+    public EventOrganizer getEventOrganizer() {
+        return eventOrganizer;
+    }
+
+    public void setEventOrganizer(EventOrganizer eventOrganizer) {
+        this.eventOrganizer = eventOrganizer;
     }
 }

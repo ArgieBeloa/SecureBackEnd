@@ -1,7 +1,10 @@
 package com.example.ThesisBackend.controller;
 
+import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
+import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.security.JWTService;
+import com.example.ThesisBackend.service.EventService;
 import com.example.ThesisBackend.service.StudentService;
 import com.example.ThesisBackend.studentUtils.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +24,13 @@ public class StudentController {
     private StudentService studentService;
 
     @Autowired
+    EventService eventService;
+
+
+    @Autowired
     private JWTService jwtService;
 
-    // ✅ GET student by ID (only student themself)
+    // ✅ GET student by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getStudentById(
             @PathVariable String id,
@@ -276,6 +283,46 @@ public class StudentController {
                 "updatedStudent", updatedStudent
         ));
     }
+    @PostMapping("/{eventId}/addEvaluation")
+    public ResponseEntity<?> addEventEvaluation(
+            @PathVariable String eventId,
+            @RequestBody EventEvaluationDetails evaluation,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        // 🔒 Step 1: Validate token
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(Map.of("error", "❌ Missing or invalid token"));
+        }
+
+        String token = authHeader.substring(7);
+
+        if (!jwtService.validateToken(token)) {
+            return ResponseEntity.status(401).body(Map.of("error", "❌ Invalid or expired token"));
+        }
+
+        // 🔒 Step 2: Extract role from token
+        String role = jwtService.getRoleFromToken(token);
+
+        // ✅ Step 3: Allow STUDENT, OFFICER, and ADMIN
+        if (!"STUDENT".equalsIgnoreCase(role)
+                && !"OFFICER".equalsIgnoreCase(role)
+                && !"ADMIN".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "🚫 Unauthorized: Only student, officer, or admin can add evaluations"
+            ));
+        }
+
+        // ✅ Step 4: Perform add evaluation
+        try {
+            EventModel updatedEvent = eventService.addEventEvaluation(eventId, evaluation, role);
+            return ResponseEntity.ok(Map.of(
+                    "message", "✅ Evaluation added successfully by " + role,
+                    "updatedEvent", updatedEvent
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "⚠️ " + e.getMessage()));
+        }
+    }
 
     // PATCH
     @PatchMapping("/{studentId}/events/{eventId}/markEvaluated")
@@ -376,6 +423,45 @@ public class StudentController {
             return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{studentId}/notifications/{notificationId}")
+    public ResponseEntity<?> deleteStudentNotification(
+            @PathVariable String studentId,
+            @PathVariable String notificationId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        // 🔒 Validate token
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("❌ Missing or invalid token");
+        }
+
+        String token = authHeader.substring(7);
+
+        if (!jwtService.validateToken(token)) {
+            return ResponseEntity.status(401).body("❌ Invalid or expired token");
+        }
+
+        // 🧩 Extract user info
+        String requesterStudentNumber = jwtService.getUsernameFromToken(token);
+        String role = jwtService.getRoleFromToken(token);
+
+        try {
+            StudentModel updatedStudent = studentService.deleteStudentNotificationById(
+                    studentId,
+                    notificationId,
+                    requesterStudentNumber,
+                    role
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "✅ Notification deleted successfully",
+                    "updatedStudent", updatedStudent
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "⚠️ " + e.getMessage()));
+        }
+    }
+
 
 
 

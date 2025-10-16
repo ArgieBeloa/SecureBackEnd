@@ -3,6 +3,7 @@ package com.example.ThesisBackend.admin;
 import com.example.ThesisBackend.Model.StudentModel;
 import com.example.ThesisBackend.security.JWTService;
 import com.example.ThesisBackend.repository.StudentRepository;
+import com.example.ThesisBackend.service.AdminService;
 import com.example.ThesisBackend.service.StudentService;
 import com.example.ThesisBackend.studentUtils.StudentNotification;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private AdminService adminService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -71,6 +75,30 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+
+
+    @GetMapping("/admin/allStudentNotificationIds")
+    public ResponseEntity<?> getAllStudentNotificationIds(@RequestHeader("Authorization") String authHeader) {
+        // Validate auth header
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(Map.of("error", "❌ Missing or invalid token"));
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            List<Map<String, Object>> data = adminService.getAllStudentNotificationIds(token);
+            return ResponseEntity.ok(Map.of(
+                    "message", "✅ Successfully fetched all student notification IDs",
+                    "total", data.size(),
+                    "data", data
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // POST
     // admin and officer student access
     @PostMapping("/admin/addStudentNotification")
     public ResponseEntity<?> addStudentNotificationToAll(

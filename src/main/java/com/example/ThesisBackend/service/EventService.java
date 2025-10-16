@@ -3,6 +3,7 @@ package com.example.ThesisBackend.service;
 
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.eventUtils.EventAttendance;
+import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +93,52 @@ public class EventService {
         System.out.println("✅ Attendance added for event: " + event.getEventTitle());
         return event;
     }
+
+      // Student event Evaluation
+      public EventModel addEventEvaluation(String eventId, EventEvaluationDetails evaluation, String role) {
+          Optional<EventModel> eventOpt = eventRepository.findById(eventId);
+
+          if (eventOpt.isEmpty()) {
+              System.out.println("❌ Event not found with ID: " + eventId);
+              return null;
+          }
+
+          // 🔒 Allow STUDENT, OFFICER, and ADMIN
+          if (!"STUDENT".equalsIgnoreCase(role)
+                  && !"OFFICER".equalsIgnoreCase(role)
+                  && !"ADMIN".equalsIgnoreCase(role)) {
+              throw new RuntimeException("🚫 Unauthorized: Only student, officer, or admin can add evaluations.");
+          }
+
+          EventModel event = eventOpt.get();
+
+          // Initialize list if null
+          if (event.getEventEvaluationDetails() == null) {
+              event.setEventEvaluationDetails(new ArrayList<>());
+          }
+
+          // ✅ Prevent duplicate evaluations by same student name
+          boolean alreadyExists = event.getEventEvaluationDetails().stream()
+                  .anyMatch(detail -> detail.getStudentName().equalsIgnoreCase(evaluation.getStudentName()));
+
+          if (alreadyExists) {
+              System.out.println("⚠️ Evaluation already exists for student: " + evaluation.getStudentName());
+              return event;
+          }
+
+          // ✅ Add the new evaluation
+          event.getEventEvaluationDetails().add(evaluation);
+
+          // 💾 Save updated event
+          eventRepository.save(event);
+
+          System.out.println("✅ Evaluation added by " + role + " for event: " + event.getEventTitle());
+          return event;
+      }
+
+
+
+
 
 
 
