@@ -39,6 +39,8 @@ public class EventService {
         return eventRepository.findAll();
     }
 
+
+
     // ✅ Get event by ID
     public Optional<EventModel> getEventById(String id) {
         return eventRepository.findById(id);

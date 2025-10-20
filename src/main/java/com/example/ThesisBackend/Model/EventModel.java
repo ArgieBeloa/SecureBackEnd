@@ -20,7 +20,7 @@ public class EventModel {
     private String eventDate;
     private String eventTime;
     private String eventLocation;
-    private String eventCategory;
+    private String category;
     private String eventTimeLength;
     private EventOrganizer eventOrganizer;
 
@@ -65,11 +65,11 @@ public class EventModel {
     }
 
     public String getEventCategory() {
-        return eventCategory;
+        return category;
     }
 
-    public void setEventCategory(String eventCategory) {
-        this.eventCategory = eventCategory;
+    public void setEventCategory(String category) {
+        this.category = category;
     }
 
     public String getEventDate() {

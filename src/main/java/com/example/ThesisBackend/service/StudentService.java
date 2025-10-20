@@ -22,6 +22,25 @@ public class StudentService {
     private JWTService jwtService;
 
     // ✅ GET
+    public List<StudentModel> getAllStudents(String token) {
+        // 🔒 Validate token
+        if (token == null || !jwtService.validateToken(token)) {
+            throw new RuntimeException("❌ Invalid or expired token");
+        }
+
+        String role = jwtService.getRoleFromToken(token);
+
+        // 🛡️ Allow only OFFICER or ADMIN
+        if (!"OFFICER".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Unauthorized: Only OFFICER or ADMIN can access all students.");
+        }
+
+        // ✅ Fetch all students
+        List<StudentModel> students = studentRepository.findAll();
+//        System.out.println("✅ Fetched all students. Total: " + students.size());
+        return students;
+    }
+
     public Optional<StudentModel> getStudentById(String id) {
         return studentRepository.findById(id);
     }
@@ -59,9 +78,36 @@ public class StudentService {
         return student;
     }
 
-    public StudentModel addEventAttendance(String studentId, StudentEventAttended event) {
-        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
 
+
+    public StudentModel addEventAttendance(String studentId, StudentEventAttended event, String token) {
+        // 🧹 Sanitize token (remove Bearer prefix + all whitespace)
+        if (token == null || token.isBlank()) {
+            throw new RuntimeException("❌ Missing or invalid token");
+        }
+
+        token = token.replace("Bearer", "")
+                .replace("bearer", "")
+                .replaceAll("\\s+", ""); // remove ALL whitespace (spaces, tabs, newlines)
+
+        System.out.println("🧽 Clean token: [" + token + "]");
+
+        // 🔒 Validate token
+        if (token.isEmpty() || !jwtService.validateToken(token)) {
+            throw new RuntimeException("❌ Invalid or expired token");
+        }
+
+        // 🔍 Extract role from token
+        String role = jwtService.getRoleFromToken(token);
+        System.out.println("🎭 User role from token: " + role);
+
+        // 🛡️ Authorization check
+        if (!"OFFICER".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Unauthorized: Only OFFICER or ADMIN can add student attendance.");
+        }
+
+        // 🔍 Find student
+        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
         if (studentOpt.isEmpty()) {
             System.out.println("❌ Student not found with ID: " + studentId);
             return null;
@@ -69,27 +115,30 @@ public class StudentService {
 
         StudentModel student = studentOpt.get();
 
-        // Initialize list if null
+        // 📋 Initialize list if null
         if (student.getStudentEventAttended() == null) {
             student.setStudentEventAttended(new ArrayList<>());
         }
+
+        // 🔁 Check if event already exists
         boolean already = student.getStudentEventAttended().stream()
-                .anyMatch(eventData-> eventData.getEventId().equals(event.getEventId()));
+                .anyMatch(eventData -> eventData.getEventId().equals(event.getEventId()));
 
         if (already) {
             System.out.println("⚠️ Event already in student's Attendance list: " + event.getEventId());
             return student;
         }
 
-        // Add the new event
+        // ➕ Add new event
         student.getStudentEventAttended().add(event);
 
-        // Save updated student
+        // 💾 Save updated student
         studentRepository.save(student);
 
         System.out.println("✅ Event added for student: " + student.getStudentName());
         return student;
     }
+
 
     public StudentModel addEventAttendedAndEvaluation(String studentId, StudentEventAttendedAndEvaluationDetails event) {
         Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
@@ -227,66 +276,143 @@ public class StudentService {
     }
 
 
-    public StudentModel updateStudentAttendedEvaluated(String studentId, String eventId, String token) {
+    // for profile attendance
+    public StudentModel markStudentAttended(String studentId, String eventId, String token) {
+        // 🧹 Sanitize token (remove Bearer prefix + all whitespace)
+        if (token == null || token.isBlank()) {
+            throw new RuntimeException("❌ Missing or invalid token");
+        }
+
+        token = token.replace("Bearer", "")
+                .replace("bearer", "")
+                .replaceAll("\\s+", ""); // remove ALL whitespace (spaces, tabs, newlines)
+
+        System.out.println("🧽 Clean token: [" + token + "]");
+
         // 🔒 Validate token
-        if (token == null || !jwtService.validateToken(token)) {
+        if (token.isEmpty() || !jwtService.validateToken(token)) {
             throw new RuntimeException("❌ Invalid or expired token");
         }
 
-        // Extract info
+        // 🔍 Extract claims
         String studentNumberFromToken = jwtService.getUsernameFromToken(token);
         String role = jwtService.getRoleFromToken(token);
 
-        // Find student
-        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
-        if (studentOpt.isEmpty()) {
-            throw new RuntimeException("❌ Student not found with ID: " + studentId);
-        }
+        // 🧍 Find student
+        StudentModel student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("❌ Student not found with ID: " + studentId));
 
-        StudentModel student = studentOpt.get();
-
-        // Authorization check
+        // 🛡️ Authorization check
         boolean isStudentSelf = student.getStudentNumber().equals(studentNumberFromToken);
         boolean isOfficerOrAdmin = "OFFICER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+        if (!isStudentSelf && !isOfficerOrAdmin) {
+            throw new RuntimeException("🚫 Unauthorized: You cannot update this student's attendance.");
+        }
 
+        // 📋 Initialize list if null
+        if (student.getStudentEventAttendedAndEvaluationDetails() == null) {
+            student.setStudentEventAttendedAndEvaluationDetails(new ArrayList<>());
+        }
+
+        // 🔁 Check if event already exists in attended list
+        for (StudentEventAttendedAndEvaluationDetails detail :
+                student.getStudentEventAttendedAndEvaluationDetails()) {
+
+            if (detail.getEventId().equals(eventId)) {
+                if (Boolean.TRUE.equals(detail.getAttended())) {
+                    throw new RuntimeException("⚠️ Event already marked as attended.");
+                }
+
+                // ✅ Update existing record
+                detail.setAttended(true);
+                studentRepository.save(student);
+                System.out.println("✅ Updated attended=true for eventId: " + eventId);
+                return student;
+            }
+        }
+
+        // 🆕 Create a new attendance record if event not found
+        StudentEventAttendedAndEvaluationDetails newDetail = new StudentEventAttendedAndEvaluationDetails();
+        newDetail.setEventId(eventId);
+        newDetail.setAttended(true);
+        newDetail.setEvaluated(false);
+        student.getStudentEventAttendedAndEvaluationDetails().add(newDetail);
+
+        studentRepository.save(student);
+        System.out.println("🆕 Added new attended eventId: " + eventId);
+        return student;
+    }
+
+
+    // for profile evaluated
+
+
+    public StudentModel markStudentEvaluated(String studentId, String eventId, String token) {
+        // 🧹 Sanitize token (remove extra whitespace and 'Bearer ' prefix if included)
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7).trim();
+        } else {
+            token = token.trim();
+        }
+
+        // 🔒 Validate token
+        if (token.isEmpty() || !jwtService.validateToken(token)) {
+            throw new RuntimeException("❌ Invalid or expired token");
+        }
+
+        String studentNumberFromToken = jwtService.getUsernameFromToken(token);
+        String role = jwtService.getRoleFromToken(token);
+
+        // 🧍 Find student
+        StudentModel student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("❌ Student not found with ID: " + studentId));
+
+        // 🛡️ Authorization check
+        boolean isStudentSelf = student.getStudentNumber().equals(studentNumberFromToken);
+        boolean isOfficerOrAdmin = "OFFICER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
         if (!isStudentSelf && !isOfficerOrAdmin) {
             throw new RuntimeException("🚫 Unauthorized: You cannot update this student's event.");
         }
 
-        // Check attended events list
+        // 📋 Check if attended list exists
         if (student.getStudentEventAttendedAndEvaluationDetails() == null ||
                 student.getStudentEventAttendedAndEvaluationDetails().isEmpty()) {
             throw new RuntimeException("⚠️ No attended events found for this student.");
         }
 
-        boolean updated = false;
-
-        // 🔄 Loop and update the matching event
+        // 🔁 Find matching event
+        boolean found = false;
         for (StudentEventAttendedAndEvaluationDetails detail :
                 student.getStudentEventAttendedAndEvaluationDetails()) {
 
             if (detail.getEventId().equals(eventId)) {
+                found = true;
+                if (!Boolean.TRUE.equals(detail.getAttended())) {
+                    throw new RuntimeException("⚠️ Student has not attended this event yet.");
+                }
                 if (Boolean.TRUE.equals(detail.getEvaluated())) {
                     throw new RuntimeException("⚠️ Event already marked as evaluated.");
                 }
 
+                // ✅ Update evaluation status
                 detail.setEvaluated(true);
-                updated = true;
-                break;
+                studentRepository.save(student);
+                System.out.println("✅ Updated evaluated=true for eventId: " + eventId);
+                return student;
             }
         }
 
-        if (!updated) {
-            throw new RuntimeException("❌ Event not found in student's attended list: " + eventId);
+        if (!found) {
+            throw new RuntimeException("❌ Event not found in student's attendance list.");
         }
 
-        // 💾 Save to DB
-        studentRepository.save(student);
-        System.out.println("✅ Updated evaluated=true for eventId: " + eventId + " in student: " + student.getStudentName());
         return student;
     }
 
-   // DELETE
+
+
+
+    // DELETE
    public StudentModel deleteStudentNotificationById(String studentId, String notificationId, String requesterStudentNumber, String role) {
        // 🔍 Find student
        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
