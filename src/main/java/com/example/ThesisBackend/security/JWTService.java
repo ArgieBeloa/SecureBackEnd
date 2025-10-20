@@ -1,11 +1,13 @@
 package com.example.ThesisBackend.security;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
@@ -17,12 +19,20 @@ public class JWTService {
     @Value("${jwt.expirationMs}")
     private long jwtExpirationMs;
 
+    /** ✅ Securely decode Base64 secret key */
     private SecretKey getSigningKey() {
-        // Must be at least 256 bits (32+ chars)
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        byte[] keyBytes;
+        try {
+            // Try Base64 decode first
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (IllegalArgumentException e) {
+            // Fallback if secret isn’t Base64
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** Generate JWT token for a given username */
+    /** Generate JWT token */
     public String generateToken(String username, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -38,10 +48,10 @@ public class JWTService {
                 .compact();
     }
 
-    /** Validate token signature & expiration */
+    /** Validate JWT */
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()                     // ✅ correct for 0.12.5
+            Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(token);
@@ -52,12 +62,9 @@ public class JWTService {
         }
     }
 
-    /** Extract username (subject) from token */
+    /** Extract username (subject) */
     public String getUsernameFromToken(String token) {
         try {
-            if (token == null || token.trim().isEmpty()) {
-                throw new IllegalArgumentException("Empty JWT token");
-            }
             return Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
@@ -70,12 +77,13 @@ public class JWTService {
         }
     }
 
+    /** Extract role */
     public String getRoleFromToken(String token) {
-        return Jwts.parser() // ✅ same parser
+        return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("role", String.class); // ✅ safely extract the “role” claim
+                .get("role", String.class);
     }
 }
