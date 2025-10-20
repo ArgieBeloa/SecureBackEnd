@@ -238,4 +238,28 @@ public class AuthController {
         }
     }
 
+    /**
+     * 🧭 Promote a student to OFFICER role.
+     * 🔒 Only ADMIN can perform this action.
+     *
+     * Example request:
+     *   PATCH /api/admin/promote/68f66dca05840f3caa5cfa72
+     *   Authorization: Bearer <ADMIN_TOKEN>
+     */
+    @PatchMapping("/promote/{studentId}")
+    public ResponseEntity<?> promoteStudentToOfficer(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String studentId
+    ) {
+        try {
+            StudentModel updatedStudent = adminService.promoteStudentToOfficer(token, studentId);
+            return ResponseEntity.ok(updatedStudent);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+
+
 }
