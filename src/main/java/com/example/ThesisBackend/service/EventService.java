@@ -30,15 +30,18 @@ public class EventService {
      */
     public EventModel createEvent(EventModel event, String token) {
         try {
+            // 🔍 Validate role from token
             String role = jwtService.getRoleFromToken(token);
-
             if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
-                throw new RuntimeException("🚫 Unauthorized: only ADMIN or OFFICER can create events.");
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN or OFFICER can create events.");
             }
 
+            // 💾 Save to MongoDB
             EventModel saved = eventRepository.save(event);
             System.out.println("✅ Event created successfully: " + saved.getEventTitle());
+
             return saved;
+
         } catch (Exception e) {
             System.out.println("❌ Error creating event: " + e.getMessage());
             throw e;
