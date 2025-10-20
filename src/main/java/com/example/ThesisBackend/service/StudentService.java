@@ -409,8 +409,61 @@ public class StudentService {
         return student;
     }
 
+    public StudentModel markEventEvaluation(String studentId, String eventId, String token) {
+        // 🧹 Sanitize token (remove 'Bearer ' prefix if present)
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7).trim();
+        } else {
+            token = token.trim();
+        }
+
+        // 🔒 Validate token
+        if (token.isEmpty() || !jwtService.validateToken(token)) {
+            throw new RuntimeException("❌ Invalid or expired token");
+        }
+
+        // 🔑 Extract user info from token
+        String studentNumberFromToken = jwtService.getUsernameFromToken(token);
+        String role = jwtService.getRoleFromToken(token);
+
+        // 🧍 Find student
+        StudentModel student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("❌ Student not found with ID: " + studentId));
+
+        // 🛡️ Authorization check: student themselves or OFFICER/ADMIN
+        boolean isStudentSelf = student.getStudentNumber().equals(studentNumberFromToken);
+        boolean isOfficerOrAdmin = "OFFICER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+        if (!isStudentSelf && !isOfficerOrAdmin) {
+            throw new RuntimeException("🚫 Unauthorized: You cannot update this student's event.");
+        }
+
+        // 📋 Ensure attended events exist
+        if (student.getStudentEventAttended() == null || student.getStudentEventAttended().isEmpty()) {
+            throw new RuntimeException("⚠️ No attended events found for this student.");
+        }
+
+        // 🔁 Find the matching event
+        for (StudentEventAttended detail : student.getStudentEventAttended()) {
+            if (detail.getEventId().equals(eventId)) {
 
 
+                // ✅ Prevent double marking
+                if (Boolean.TRUE.equals(detail.isEvaluated())) {
+                    throw new RuntimeException("⚠️ Event already marked as evaluated.");
+                }
+
+                // ✅ Update evaluation status
+                detail.setEvaluated(true);
+                studentRepository.save(student);
+
+                System.out.println("✅ Updated evaluated=true for eventId: " + eventId);
+                return student;
+            }
+        }
+
+        // ❌ Event not found in student's attendance list
+        throw new RuntimeException("❌ Event not found in student's attendance list.");
+    }
 
     // DELETE
    public StudentModel deleteStudentNotificationById(String studentId, String notificationId, String requesterStudentNumber, String role) {
@@ -451,6 +504,50 @@ public class StudentService {
        System.out.println("✅ Notification deleted by " + role + " for student: " + student.getStudentName());
        return student;
    }
+
+    // ✅ Delete a student's upcoming event by eventId
+    public StudentModel deleteStudentUpcomingEventById(
+            String studentId,
+            String eventId,
+            String requesterStudentNumber,
+            String role
+    ) {
+        // 🔍 Find student
+        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
+        if (studentOpt.isEmpty()) {
+            throw new RuntimeException("❌ Student not found with ID: " + studentId);
+        }
+
+        StudentModel student = studentOpt.get();
+
+        // 🔒 Check permissions
+        boolean isStudentSelf = student.getStudentNumber().equals(requesterStudentNumber);
+        boolean isOfficerOrAdmin = "OFFICER".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+
+        if (!isStudentSelf && !isOfficerOrAdmin) {
+            throw new RuntimeException("🚫 Unauthorized: Only the student, officer, or admin can delete upcoming events.");
+        }
+
+        // 📋 Check if upcoming events exist
+        if (student.getStudentUpcomingEvents() == null || student.getStudentUpcomingEvents().isEmpty()) {
+            throw new RuntimeException("⚠️ No upcoming events found for this student.");
+        }
+
+        // 🗑️ Remove the event
+        boolean removed = student.getStudentUpcomingEvents().removeIf(
+                event -> event.getEventId().equals(eventId)
+        );
+
+        if (!removed) {
+            throw new RuntimeException("❌ Upcoming event not found with ID: " + eventId);
+        }
+
+        // 💾 Save updated student
+        studentRepository.save(student);
+
+        System.out.println("✅ Upcoming event deleted by " + role + " for student: " + student.getStudentName());
+        return student;
+    }
 
 
 

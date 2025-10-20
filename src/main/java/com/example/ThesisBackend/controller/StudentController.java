@@ -265,6 +265,30 @@ public class StudentController {
         }
     }
 
+    @PostMapping("/{studentId}/events/{eventId}/markEvaluated")
+    public ResponseEntity<?> markEventAttendanceEvaluated(
+            @PathVariable String studentId,
+            @PathVariable String eventId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            String token = authHeader.substring(7).trim();
+
+            // Call service to update evaluated status
+            StudentModel updatedStudent = studentService.markEventEvaluation(studentId, eventId, token);
+
+            return ResponseEntity.ok(updatedStudent);
+        } catch (RuntimeException e) {
+            // Return 403 for authorization issues, 404 for missing student/event, or other errors
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+
     /* --------------------------------------------------------------------------
      * 🗑️  DELETE: Remove student notification
      * -------------------------------------------------------------------------- */
@@ -334,4 +358,35 @@ public class StudentController {
             return ResponseEntity.badRequest().body(Map.of("error", "⚠️ " + e.getMessage()));
         }
     }
+
+    // ✅ DELETE: Remove a student's upcoming event
+    @DeleteMapping("/{studentId}/upcomingEvents/{eventId}")
+    public ResponseEntity<?> deleteStudentUpcomingEvent(
+            @PathVariable String studentId,
+            @PathVariable String eventId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            String token = authHeader.substring(7).trim();
+            if (!jwtService.validateToken(token)) {
+                return ResponseEntity.status(401).body("❌ Invalid or expired token");
+            }
+
+            String requesterStudentNumber = jwtService.getUsernameFromToken(token);
+            String role = jwtService.getRoleFromToken(token);
+
+            StudentModel updated = studentService.deleteStudentUpcomingEventById(
+                    studentId, eventId, requesterStudentNumber, role
+            );
+
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
 }
