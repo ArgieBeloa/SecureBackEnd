@@ -61,7 +61,7 @@ public class EventController {
 
                 // 🖼️ Add image URL based on your deployed backend
                 if (event.getEventImageId() != null && !event.getEventImageId().isEmpty()) {
-                    String imageUrl = "http://localhost:8080/api/events/image/" + event.getEventImageId();
+                    String imageUrl = "https://securebackend-ox2e.onrender.com/api/events/image/" + event.getEventImageId();
                     eventData.put("eventImageUrl", imageUrl);
                 } else {
                     eventData.put("eventImageUrl", null);
