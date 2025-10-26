@@ -15,6 +15,8 @@ public class EventModel {
     @Id
     private String id;
 
+    private String whoPostedName;
+
     /* =========================================================
        🟩 BASIC EVENT INFORMATION
     ========================================================= */
@@ -33,8 +35,8 @@ public class EventModel {
     // Organizer information (embedded object)
     private EventOrganizer eventOrganizer;
 
-    // 🖼️ Optional event poster or banner image (Base64-encoded)
-    private String eventImage;
+    // 🖼️ Optional event poster image
+    private String eventImageId;;
 
 
     /* =========================================================
@@ -57,6 +59,13 @@ public class EventModel {
         this.id = id;
     }
 
+    public String getWhoPostedName() {
+        return whoPostedName;
+    }
+
+    public void setWhoPostedName(String whoPostedName) {
+        this.whoPostedName = whoPostedName;
+    }
 
     public String getEventTitle() {
         return eventTitle;
@@ -148,14 +157,13 @@ public class EventModel {
     }
 
 
-    public String getEventImage() {
-        return eventImage;
+    public String getEventImageId() {
+        return eventImageId;
     }
 
-    public void setEventImage(String eventImage) {
-        this.eventImage = eventImage;
+    public void setEventImageId(String eventImageId) {
+        this.eventImageId = eventImageId;
     }
-
 
     public List<EventAttendance> getEventAttendances() {
         return eventAttendances;

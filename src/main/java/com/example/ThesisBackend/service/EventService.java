@@ -7,6 +7,7 @@ import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,9 @@ public class EventService {
     @Autowired
     private JWTService jwtService;
 
+    @Autowired
+    private EventImageService eventImageService;
+
     // =====================================================
     // 🟢 CREATE
     // =====================================================
@@ -30,8 +34,14 @@ public class EventService {
      */
     public EventModel createEvent(EventModel event, String token) {
         try {
-            // 🔍 Validate role from token
-            String role = jwtService.getRoleFromToken(token);
+            // 🧹 Clean up the token (remove "Bearer " prefix if it exists)
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
             if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
                 throw new RuntimeException("🚫 Unauthorized: Only ADMIN or OFFICER can create events.");
             }
@@ -39,7 +49,6 @@ public class EventService {
             // 💾 Save to MongoDB
             EventModel saved = eventRepository.save(event);
             System.out.println("✅ Event created successfully: " + saved.getEventTitle());
-
             return saved;
 
         } catch (Exception e) {
@@ -47,6 +56,45 @@ public class EventService {
             throw e;
         }
     }
+
+
+    /**
+     * ✅ Upload and link an image to an event
+     */
+    public EventModel uploadEventImage(String eventId, MultipartFile file, String token) {
+        try {
+            // 🧹 Clean token (remove "Bearer " prefix if present)
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔐 Validate user role
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN or OFFICER can upload event images.");
+            }
+
+            // 🔍 Find event
+            EventModel event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new RuntimeException("❌ Event not found with ID: " + eventId));
+
+            // 💾 Store image in GridFS using same ID as event
+            String fileId = eventImageService.storeImageWithEventId(eventId, file);
+
+            // 🔗 Save image ID (same as event ID)
+            event.setEventImageId(fileId);
+            eventRepository.save(event);
+
+            System.out.println("✅ Event image uploaded and linked: " + event.getEventTitle());
+            return event;
+
+        } catch (Exception e) {
+            System.out.println("❌ Error uploading event image: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
 
     // =====================================================
     // 🟡 READ

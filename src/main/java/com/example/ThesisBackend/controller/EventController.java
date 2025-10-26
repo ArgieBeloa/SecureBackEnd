@@ -3,12 +3,18 @@ package com.example.ThesisBackend.controller;
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.eventUtils.EventAttendance;
 import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
+import com.example.ThesisBackend.service.EventImageService;
 import com.example.ThesisBackend.service.EventService;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,12 +28,55 @@ public class EventController {
     @Autowired
     private JWTService jwtService;
 
+    @Autowired
+    private EventImageService eventImageService;
+
     // ✅ PUBLIC: Get all events (no authentication needed)
     @GetMapping
-    public ResponseEntity<List<EventModel>> getAllEvents() {
-        List<EventModel> events = eventService.getAllEvents();
-        return ResponseEntity.ok(events);
+    public ResponseEntity<?> getAllEvents() {
+        try {
+            List<EventModel> events = eventService.getAllEvents();
+
+            List<Map<String, Object>> responseList = new ArrayList<>();
+
+            for (EventModel event : events) {
+                Map<String, Object> eventData = new HashMap<>();
+
+                eventData.put("id", event.getId());
+                eventData.put("whoPostedName", event.getWhoPostedName());
+                eventData.put("eventTitle", event.getEventTitle());
+                eventData.put("eventShortDescription", event.getEventShortDescription());
+                eventData.put("eventBody", event.getEventBody());
+                eventData.put("eventDate", event.getEventDate());
+                eventData.put("eventTime", event.getEventTime());
+                eventData.put("eventTimeLength", event.getEventTimeLength());
+                eventData.put("eventLocation", event.getEventLocation());
+                eventData.put("eventCategory", event.getEventCategory());
+                eventData.put("allStudentAttending", event.getAllStudentAttending());
+                eventData.put("eventOrganizer", event.getEventOrganizer());
+                eventData.put("eventAttendances", event.getEventAttendances());
+                eventData.put("eventAgendas", event.getEventAgendas());
+                eventData.put("evaluationQuestions", event.getEvaluationQuestions());
+                eventData.put("eventEvaluationDetails", event.getEventEvaluationDetails());
+
+                // 🖼️ Add image URL based on your deployed backend
+                if (event.getEventImageId() != null && !event.getEventImageId().isEmpty()) {
+                    String imageUrl = "http://localhost:8080/api/events/image/" + event.getEventImageId();
+                    eventData.put("eventImageUrl", imageUrl);
+                } else {
+                    eventData.put("eventImageUrl", null);
+                }
+
+                responseList.add(eventData);
+            }
+
+            return ResponseEntity.ok(responseList);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("❌ Error fetching events: " + e.getMessage());
+        }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getEventById(@PathVariable String id) {
@@ -39,6 +88,23 @@ public class EventController {
 
         return ResponseEntity.ok(eventOpt.get());
     }
+    @GetMapping("/image/{id}")
+    public ResponseEntity<byte[]> getEventImage(@PathVariable String id) {
+        try {
+            byte[] imageBytes = eventImageService.getImageById(id);
+            if (imageBytes == null) {
+                return ResponseEntity.status(404).body(null);
+            }
+
+            String contentType = eventImageService.getImageContentType(id);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(imageBytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 
     // 🔐 PROTECTED: Create event (only ADMIN or OFFICER)
     @PostMapping("/create")
@@ -131,6 +197,20 @@ public class EventController {
                     "status", "error",
                     "message", "❌ Server error: " + e.getMessage()
             ));
+        }
+    }
+
+    @PostMapping("/{eventId}/upload-image")
+    public ResponseEntity<?> uploadEventImage(
+            @PathVariable String eventId,
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader("Authorization") String token
+    ) {
+        try {
+            EventModel updatedEvent = eventService.uploadEventImage(eventId, file, token);
+            return ResponseEntity.ok(updatedEvent);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("❌ Error: " + e.getMessage());
         }
     }
 
