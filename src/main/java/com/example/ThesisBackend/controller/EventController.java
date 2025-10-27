@@ -200,7 +200,10 @@ public class EventController {
         }
     }
 
-    @PostMapping("/{eventId}/upload-image")
+    @PostMapping(
+            value = "/{eventId}/upload-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<?> uploadEventImage(
             @PathVariable String eventId,
             @RequestParam("file") MultipartFile file,
@@ -210,9 +213,11 @@ public class EventController {
             EventModel updatedEvent = eventService.uploadEventImage(eventId, file, token);
             return ResponseEntity.ok(updatedEvent);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(500).body("❌ Error: " + e.getMessage());
         }
     }
+
 
 
 
