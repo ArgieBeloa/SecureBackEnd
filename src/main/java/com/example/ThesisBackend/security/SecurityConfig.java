@@ -33,7 +33,8 @@ public class SecurityConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         // ✅ Allow your frontend origin (React / Expo Web)
-                        .allowedOriginPatterns("http://localhost:8081")
+                        .allowedOriginPatterns("http://localhost:8081",
+                                "https://cpcnotify.netlify.app")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true);
