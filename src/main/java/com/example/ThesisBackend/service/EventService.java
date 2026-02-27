@@ -139,25 +139,78 @@ public class EventService {
     /**
      * ✅ Update an existing event (ADMIN or OFFICER only)
      */
-    public EventModel updateEvent(String id, EventModel newEvent, String token) {
-        try {
-            String role = jwtService.getRoleFromToken(token);
-            if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
-                throw new RuntimeException("🚫 Unauthorized: only ADMIN or OFFICER can update events.");
-            }
+    public EventModel updateEvent(String id, EventModel newEvent, String role) {
 
-            EventModel existing = eventRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("❌ Event not found with ID: " + id));
+        System.out.println("ID: " + id);
+        System.out.println("Role: " + role);
 
-            updateEventFields(existing, newEvent);
-            EventModel updated = eventRepository.save(existing);
+        EventModel existingEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("❌ Event not found"));
 
-            System.out.println("✅ Event updated: " + updated.getEventTitle());
-            return updated;
-        } catch (Exception e) {
-            System.out.println("❌ Error updating event: " + e.getMessage());
-            throw e;
+        System.out.println("Event Found: " + existingEvent.getEventTitle());
+        // 1️⃣ Find existing event
+//        EventModel existingEvent = eventRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("❌ Event not found"));
+
+        if (role == null) {
+            throw new SecurityException("No role found");
         }
+
+    /* =========================================================
+       🟢 ADMIN - Can update almost everything
+    ========================================================= */
+        if (role.equalsIgnoreCase("ADMIN")) {
+
+            existingEvent.setWhoPostedName(newEvent.getWhoPostedName());
+            existingEvent.setEventTitle(newEvent.getEventTitle());
+            existingEvent.setEventShortDescription(newEvent.getEventShortDescription());
+            existingEvent.setEventBody(newEvent.getEventBody());
+            existingEvent.setEventDate(newEvent.getEventDate());
+            existingEvent.setEventTime(newEvent.getEventTime());
+            existingEvent.setEventTimeLength(newEvent.getEventTimeLength());
+            existingEvent.setEventLocation(newEvent.getEventLocation());
+            existingEvent.setEventCategory(newEvent.getEventCategory());
+            existingEvent.setEventOrganizer(newEvent.getEventOrganizer());
+            existingEvent.setEventImageId(newEvent.getEventImageId());
+            existingEvent.setEventAgendas(newEvent.getEventAgendas());
+            existingEvent.setEvaluationQuestions(newEvent.getEvaluationQuestions());
+
+            // ❌ Do NOT update:
+            // eventAttendances
+            // eventEvaluationDetails
+            // allStudentAttending
+        }
+
+    /* =========================================================
+       🔵 OFFICER - Limited update
+    ========================================================= */
+        else if (role.equalsIgnoreCase("OFFICER")) {
+
+            existingEvent.setEventTitle(newEvent.getEventTitle());
+            existingEvent.setEventShortDescription(newEvent.getEventShortDescription());
+            existingEvent.setEventBody(newEvent.getEventBody());
+            existingEvent.setEventDate(newEvent.getEventDate());
+            existingEvent.setEventTime(newEvent.getEventTime());
+            existingEvent.setEventTimeLength(newEvent.getEventTimeLength());
+            existingEvent.setEventLocation(newEvent.getEventLocation());
+            existingEvent.setEventCategory(newEvent.getEventCategory());
+            existingEvent.setEventImageId(newEvent.getEventImageId());
+            existingEvent.setEventAgendas(newEvent.getEventAgendas());
+
+            // 🚫 Officer CANNOT modify:
+            // whoPostedName
+            // eventOrganizer
+            // evaluationQuestions
+            // eventAttendances
+            // eventEvaluationDetails
+            // allStudentAttending
+        }
+
+        else {
+            throw new SecurityException("🚫 Unauthorized role");
+        }
+
+        return eventRepository.save(existingEvent);
     }
 
     /**

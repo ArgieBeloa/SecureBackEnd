@@ -244,6 +244,7 @@ public class EventController {
             return ResponseEntity.status(401).body("🚫 Unauthorized: you are not allowed to modify this event");
         } catch (RuntimeException e) {
             // ⚠️ Other app errors (like event not found)
+            e.printStackTrace();
             return ResponseEntity.status(403).body(e.getMessage());
         }
     }
