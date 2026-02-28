@@ -259,6 +259,42 @@ public class AuthController {
         }
     }
 
+    /**
+     * 🧭 Demote a OFFICER to STUDENT role.
+     * 🔒 Only ADMIN can perform this action.
+     *
+     * Example request:
+     *   PATCH /api/admin/demote/68f66dca05840f3caa5cfa72
+     *   Authorization: Bearer <ADMIN_TOKEN>
+     */
+    @PatchMapping("/demote/{studentId}")
+    public ResponseEntity<?> demoteOfficer(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String studentId
+    ) {
+        try {
+            StudentModel updatedStudent = adminService.demoteOfficer(studentId, token);
+            return ResponseEntity.ok(updatedStudent);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/deleteStudent/{id}")
+    public ResponseEntity<?> deleteStudent(
+            @PathVariable String id,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing token");
+            }
+
+            adminService.deleteStudent(id, authHeader);
+            return ResponseEntity.ok("✅ student deleted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
 
 
 

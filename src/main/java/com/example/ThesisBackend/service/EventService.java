@@ -347,13 +347,23 @@ public class EventService {
      */
     public void deleteEvent(String id, String token) {
         try {
-            String role = jwtService.getRoleFromToken(token);
-            if (!"ADMIN".equalsIgnoreCase(role)) {
-                throw new RuntimeException("🚫 Unauthorized: only ADMIN can delete events.");
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim(); // remove "Bearer "
             }
 
-            eventRepository.deleteById(id);
-            System.out.println("🗑️ Event deleted with ID: " + id);
+            String adminRole = jwtService.getRoleFromToken(cleanToken);
+
+            if("ADMIN".equalsIgnoreCase(adminRole)){
+                eventRepository.deleteById(id);
+                System.out.println("🗑️ Event deleted with ID: " + id);
+            }else{
+                throw new RuntimeException("🚫 Unauthorized: ONLY admin can delete event");
+            }
+
+
+
+
         } catch (Exception e) {
             System.out.println("❌ Error deleting event: " + e.getMessage());
             throw e;

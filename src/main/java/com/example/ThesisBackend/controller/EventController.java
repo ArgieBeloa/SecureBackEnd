@@ -290,10 +290,7 @@ public class EventController {
                 return ResponseEntity.status(401).body("❌ Missing token");
             }
 
-            String token = authHeader.substring(7);
-            String role = jwtService.getRoleFromToken(token);
-
-            eventService.deleteEvent(id, role);
+            eventService.deleteEvent(id, authHeader);
             return ResponseEntity.ok("✅ Event deleted successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(e.getMessage());

@@ -89,4 +89,56 @@ public class AdminService {
         // ✅ Save changes
         return studentRepository.save(student);
     }
+
+    public StudentModel demoteOfficer(String studentId, String token) {
+        // ✅ Remove "Bearer " prefix if included
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        // ✅ Check if token belongs to ADMIN
+        String role = jwtService.getRoleFromToken(token);
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Access Denied: Only ADMIN can promote students.");
+        }
+
+        // ✅ Find student to promote
+        Optional<StudentModel> studentOpt = studentRepository.findById(studentId);
+        if (studentOpt.isEmpty()) {
+            throw new RuntimeException("❌ Student not found with ID: " + studentId);
+        }
+
+        StudentModel student = studentOpt.get();
+
+        // ✅ Promote role, but keep same encrypted password
+        student.setRole("STUDENT");
+
+        System.out.println("Successfully demoted "+student.getStudentName());
+
+        // ✅ Save changes
+        return studentRepository.save(student);
+    }
+
+    public void deleteStudent(String id, String token) {
+        try {
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim(); // remove "Bearer "
+            }
+
+            String adminRole = jwtService.getRoleFromToken(cleanToken);
+
+            if("ADMIN".equalsIgnoreCase(adminRole)){
+                studentRepository.deleteById(id);
+                System.out.println("🗑️ Student deleted with ID: " + id);
+            }else{
+                throw new RuntimeException("🚫 Unauthorized: ONLY admin can delete event");
+            }
+
+
+        } catch (Exception e) {
+            System.out.println("❌ Error deleting event: " + e.getMessage());
+            throw e;
+        }
+    }
 }
