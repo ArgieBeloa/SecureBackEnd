@@ -34,7 +34,7 @@ public class SecurityConfig {
                 registry.addMapping("/**")
                         // ✅ Allow your frontend origin (React / Expo Web)
                         .allowedOriginPatterns("http://localhost:8081",
-                                "https://cpcnotify.netlify.app")
+                                "https://cpcnotify.netlify.app","https://cpcosa.netlify.app/")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true);
