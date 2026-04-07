@@ -1,17 +1,23 @@
 package com.example.ThesisBackend.service;
 
 import com.example.ThesisBackend.Model.EventModel;
+import com.example.ThesisBackend.Model.StudentModel;
 import com.example.ThesisBackend.eventUtils.EventAttendance;
 import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.repository.EventRepository;
+import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Service
 public class EventService {
@@ -20,7 +26,12 @@ public class EventService {
     private EventRepository eventRepository;
 
     @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
     private JWTService jwtService;
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Autowired
     private EventImageService eventImageService;
@@ -106,7 +117,7 @@ public class EventService {
     public List<EventModel> getAllEvents() {
         try {
             List<EventModel> events = eventRepository.findAll();
-//            System.out.println("✅ Retrieved " + events.size() + " events.");
+            System.out.println("✅ Retrieved " + events.size() + " events.");
             return events;
         } catch (Exception e) {
             System.out.println("❌ Error fetching events: " + e.getMessage());
@@ -291,7 +302,7 @@ public class EventService {
         } catch (Exception e) {
             // 🧨 8️⃣ Detailed logging
             System.out.println("❌ Error adding attendance: " + e.getMessage());
-            e.printStackTrace();
+
             throw new RuntimeException("❌ Error adding attendance: " + e.getMessage(), e);
         }
     }
@@ -342,6 +353,27 @@ public class EventService {
     // 🔴 DELETE
     // =====================================================
 
+
+/**
+ delete event data related
+
+
+*/
+
+public void removeEventFromAllStudents(String eventId) {
+
+    Query query = new Query();
+
+    Update update = new Update()
+            .pull("studentUpcomingEvents", Query.query(Criteria.where("eventId").is(eventId)))
+            .pull("studentEventAttended", Query.query(Criteria.where("eventId").is(eventId)))
+            .pull("studentRecentEvaluations", Query.query(Criteria.where("eventId").is(eventId)))
+            .pull("studentNotifications", Query.query(Criteria.where("eventId").is(eventId)))
+            .pull("studentEventAttendedAndEvaluationDetails", Query.query(Criteria.where("eventId").is(eventId)));
+
+    mongoTemplate.updateMulti(query, update, StudentModel.class);
+}
+
     /**
      * ✅ Delete event (ADMIN only)
      */
@@ -355,14 +387,17 @@ public class EventService {
             String adminRole = jwtService.getRoleFromToken(cleanToken);
 
             if("ADMIN".equalsIgnoreCase(adminRole)){
+                //student related data in delete
+                removeEventFromAllStudents(id);
+
+                //Admin access (delete event by id)
                 eventRepository.deleteById(id);
+
+
                 System.out.println("🗑️ Event deleted with ID: " + id);
             }else{
                 throw new RuntimeException("🚫 Unauthorized: ONLY admin can delete event");
             }
-
-
-
 
         } catch (Exception e) {
             System.out.println("❌ Error deleting event: " + e.getMessage());
