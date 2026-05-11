@@ -1,6 +1,9 @@
 package com.example.ThesisBackend.service;
 
+import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
+import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
+import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,9 @@ public class AdminService {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
 
     @Autowired
     private JWTService jwtService;
@@ -141,4 +147,34 @@ public class AdminService {
             throw e;
         }
     }
+
+//  public event evaluation (event id and user data )
+public EventModel addEventEvaluation(
+        String eventId,
+        EventEvaluationDetails evaluation
+) {
+    try {
+        Optional<EventModel> eventOpt = eventRepository.findById(eventId);
+
+        if (eventOpt.isEmpty()) {
+            System.out.println("❌ Event not found with ID: " + eventId);
+            return null;
+        }
+
+        EventModel event = eventOpt.get();
+
+        // ✅ ADD EVALUATION
+        event.getEventEvaluationDetails().add(evaluation);
+
+        eventRepository.save(event);
+
+        System.out.println("✅ Evaluation added by "+ event.getEventTitle());
+
+        return event;
+
+    } catch (Exception e) {
+        System.out.println("❌ Error adding evaluation: " + e.getMessage());
+        throw e;
+    }
+}
 }

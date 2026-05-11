@@ -1,6 +1,8 @@
 package com.example.ThesisBackend.admin;
 
+import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
+import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import com.example.ThesisBackend.service.AdminService;
@@ -295,6 +297,55 @@ public class AuthController {
             return ResponseEntity.status(403).body(e.getMessage());
         }
     }
+
+//    public evaluation
+@PostMapping("/{eventId}/addEvaluation")
+public ResponseEntity<?> addEvaluation(
+        @PathVariable String eventId,
+        @RequestBody EventEvaluationDetails eventEvaluationDetails
+) {
+
+    try {
+
+        EventModel updated =
+                adminService.addEventEvaluation(eventId, eventEvaluationDetails);
+
+        if (updated == null) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "status", "error",
+                    "message", "❌ Event not found"
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "✅ Evaluation submitted successfully",
+                "eventTitle", updated.getEventTitle()
+        ));
+
+    } catch (IllegalStateException e) {
+
+        return ResponseEntity.badRequest().body(Map.of(
+                "status", "warning",
+                "message", e.getMessage()
+        ));
+
+    } catch (RuntimeException e) {
+
+        return ResponseEntity.status(403).body(Map.of(
+                "status", "error",
+                "message", e.getMessage()
+        ));
+
+    } catch (Exception e) {
+        e.printStackTrace();
+
+        return ResponseEntity.status(500).body(Map.of(
+                "status", "error",
+                "message", "❌ Server error: " + e.getMessage()
+        ));
+    }
+}
 
 
 
