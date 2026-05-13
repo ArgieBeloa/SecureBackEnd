@@ -7,6 +7,9 @@ public class EventEvaluationDetails {
     private String studentName;
     private double studentAverageRate;
     private String studentSuggestion;
+    private String course;
+
+
 
     private List<StudentEvaluationInfo> studentEvaluationInfos;
 
@@ -16,6 +19,14 @@ public class EventEvaluationDetails {
 
     public void setStudentEvaluationInfos(List<StudentEvaluationInfo> studentEvaluationInfos) {
         this.studentEvaluationInfos = studentEvaluationInfos;
+    }
+
+    public String getCourse() {
+        return course;
+    }
+
+    public void setCourse(String course) {
+        this.course = course;
     }
 
     public String getStudentName() {
