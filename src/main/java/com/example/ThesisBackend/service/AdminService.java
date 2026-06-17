@@ -8,6 +8,7 @@ import com.example.ThesisBackend.repository.AdminRepository;
 import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
+import com.example.ThesisBackend.studentUtils.OfficerCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import  com.example.ThesisBackend.adminUtils.*;
@@ -407,7 +408,7 @@ public class AdminService {
      * Only ADMIN can perform this operation.
      * Keeps the existing encrypted password (no reset).
      */
-    public StudentModel promoteStudentToOfficer(String token, String studentId) {
+    public StudentModel promoteStudentToOfficer(String token, String studentId, boolean canEdit, boolean canAdd) {
         // ✅ Remove "Bearer " prefix if included
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);
@@ -429,6 +430,12 @@ public class AdminService {
 
         // ✅ Promote role, but keep same encrypted password
         student.setRole("OFFICER");
+        // Create officer credentials
+        OfficerCredentials credentials = new OfficerCredentials();
+        credentials.setCanEditEvent(canEdit);
+        credentials.setCanAddEvent(canAdd);
+
+        student.setOfficerCredentials(credentials);
 
         // ✅ Save changes
         return studentRepository.save(student);

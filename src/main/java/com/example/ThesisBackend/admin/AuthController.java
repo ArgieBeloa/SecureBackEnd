@@ -405,16 +405,25 @@ public class AuthController {
     @PatchMapping("/promote/{studentId}")
     public ResponseEntity<?> promoteStudentToOfficer(
             @RequestHeader("Authorization") String token,
-            @PathVariable String studentId
+            @PathVariable String studentId,
+            @RequestParam boolean canEdit,
+            @RequestParam boolean canAdd
     ) {
         try {
-            StudentModel updatedStudent = adminService.promoteStudentToOfficer(token, studentId);
+            StudentModel updatedStudent =
+                    adminService.promoteStudentToOfficer(
+                            token,
+                            studentId,
+                            canEdit,
+                            canAdd
+                    );
+
             return ResponseEntity.ok(updatedStudent);
+
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
     /**
      * 🧭 Demote a OFFICER to STUDENT role.
      * 🔒 Only ADMIN can perform this action.

@@ -20,6 +20,8 @@ public class StudentModel {
    // Access control
    private String role = "STUDENT";
 
+   private OfficerCredentials officerCredentials;
+
     // info
     private  String studentName;
     private String course;
@@ -38,6 +40,15 @@ public class StudentModel {
 
 
     // getters and setters
+
+    public OfficerCredentials getOfficerCredentials() {
+        return officerCredentials;
+    }
+
+    public void setOfficerCredentials(OfficerCredentials officerCredentials) {
+        this.officerCredentials = officerCredentials;
+    }
+
     public String getId() {
         return id;
     }
