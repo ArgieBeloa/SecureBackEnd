@@ -62,6 +62,41 @@ public class AdminService {
         }
     }
 
+    // GET ADMIN Evaluation Template
+    public List<evaluationTemplate> getEvaluationTemplates(
+            String adminId,
+            String token) {
+
+        try {
+            String cleanToken = token;
+
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            String role = jwtService.getRoleFromToken(cleanToken);
+
+            if (!"ADMIN".equalsIgnoreCase(role)
+                    && !"OFFICER".equalsIgnoreCase(role)) {
+
+                throw new RuntimeException(
+                        "🚫 Unauthorized: Only ADMIN or OFFICER can access this endpoint");
+            }
+
+            AdminModel admin = adminRepository.findById(adminId)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "❌ Admin not found with ID: " + adminId));
+
+            return admin.getEvaluationTemplates();
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
     //Add Admin
     public AdminModel createAdmin(AdminModel adminModel, String token){
 

@@ -65,6 +65,23 @@ public class AuthController {
            return ResponseEntity.status(403).body(e.getMessage());
        }
    }
+    @GetMapping("/admin/evaluationTemplates/{adminId}")
+    public ResponseEntity<?> getEvaluationTemplates(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String adminId) {
+
+        try {
+            List<evaluationTemplate> templates =
+                    adminService.getEvaluationTemplates(
+                            adminId,
+                            token);
+
+            return ResponseEntity.ok(templates);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
    // POST Admin data
    @PostMapping("/admin")
