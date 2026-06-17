@@ -144,7 +144,7 @@ public class AuthController {
     }
 
 //    DELETE MAPPING
-    @DeleteMapping("admin/{adminId}/currentOfficer/{studentId}")
+    @DeleteMapping("/admin/{adminId}/currentOfficer/{studentId}")
     public ResponseEntity<AdminModel> deleteCurrentOfficer(
             @PathVariable String adminId,
             @PathVariable String studentId,
@@ -160,7 +160,7 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("admin/{adminId}/eventApproval/{eventId}")
+    @DeleteMapping("/admin/{adminId}/eventApproval/{eventId}")
     public ResponseEntity<AdminModel> deleteApprovalEvent(
             @PathVariable String adminId,
             @PathVariable String eventId,
@@ -175,7 +175,7 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("admin/{adminId}/evaluationTemplate/{templateId}")
+    @DeleteMapping("/admin/{adminId}/evaluationTemplate/{templateId}")
     public ResponseEntity<AdminModel> deleteEvaluationTemplate(
             @PathVariable String adminId,
             @PathVariable String templateId,
