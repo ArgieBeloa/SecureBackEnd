@@ -5,9 +5,17 @@ import java.util.List;
 
 public class evaluationTemplate {
 
+    private  String id;
     private String templateName;
-
     private List<EvaluationQuestion> evaluationQuestions;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public List<EvaluationQuestion> getEvaluationQuestions() {
         return evaluationQuestions;

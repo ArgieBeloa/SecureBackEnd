@@ -3,6 +3,7 @@ package com.example.ThesisBackend.admin;
 import com.example.ThesisBackend.Model.AdminModel;
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
+import com.example.ThesisBackend.adminUtils.*;
 import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
@@ -80,6 +81,113 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(e.getMessage());
         }
+    }
+    // ADD New Officer to admin data
+    @PostMapping("/admin/addNewOfficer/{id}")
+    public ResponseEntity<?> addNewOfficer(@PathVariable String id, @RequestHeader("Authorization") String authHeader, @RequestBody currentOfficer newOfficer){
+
+
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            // 🧹 Remove "Bearer " prefix
+            String token = authHeader.substring(7).trim();
+
+            AdminModel admin = adminService.addOfficer(id, newOfficer, token);
+            return ResponseEntity.ok(admin);
+        } catch (Exception e) {
+
+            return ResponseEntity.status(400).body("❌ " + e.getMessage());
+        }
+    }
+
+  // ADD New approval event
+  @PostMapping("/admin/addApprovalEvent/{id}")
+  public ResponseEntity<?> addNewApprovalEvent(@PathVariable String id, @RequestHeader("Authorization") String authHeader, @RequestBody approvalUpdateEvent newApprovalEvent){
+
+
+      try {
+          if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+              return ResponseEntity.status(401).body("❌ Missing or invalid token");
+          }
+
+          // 🧹 Remove "Bearer " prefix
+          String token = authHeader.substring(7).trim();
+
+          AdminModel admin = adminService.addEventApproval(id, newApprovalEvent, token);
+          return ResponseEntity.ok(admin);
+      } catch (Exception e) {
+
+          return ResponseEntity.status(400).body("❌ " + e.getMessage());
+      }
+  }
+
+   //  Add new evaluation template
+    @PostMapping("/admin/addEvaluationTemplate/{id}")
+    public ResponseEntity<?> addNewEvaluationTemplate(@PathVariable String id, @RequestHeader("Authorization") String authHeader, @RequestBody evaluationTemplate newEvaluationTemplate){
+
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            // 🧹 Remove "Bearer " prefix
+            String token = authHeader.substring(7).trim();
+
+            AdminModel admin = adminService.addEvaluationTemplate(id, newEvaluationTemplate, token);
+            return ResponseEntity.ok(admin);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("❌ " + e.getMessage());
+        }
+    }
+
+//    DELETE MAPPING
+    @DeleteMapping("admin/{adminId}/currentOfficer/{studentId}")
+    public ResponseEntity<AdminModel> deleteCurrentOfficer(
+            @PathVariable String adminId,
+            @PathVariable String studentId,
+            @RequestHeader("Authorization") String token) {
+
+
+        AdminModel result = adminService.deleteCurrentOfficer(adminId, studentId, token);
+
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("admin/{adminId}/eventApproval/{eventId}")
+    public ResponseEntity<AdminModel> deleteApprovalEvent(
+            @PathVariable String adminId,
+            @PathVariable String eventId,
+            @RequestHeader("Authorization") String token) {
+
+        AdminModel result = adminService.deleteApprovalEvent(adminId, eventId, token);
+
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("admin/{adminId}/evaluationTemplate/{templateId}")
+    public ResponseEntity<AdminModel> deleteEvaluationTemplate(
+            @PathVariable String adminId,
+            @PathVariable String templateId,
+            @RequestHeader("Authorization") String token) {
+
+        AdminModel result = adminService.deleteEvaluationTemplate(adminId, templateId, token);
+
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(result);
     }
 
 
