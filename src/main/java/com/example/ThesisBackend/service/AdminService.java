@@ -1,14 +1,16 @@
 package com.example.ThesisBackend.service;
 
+import com.example.ThesisBackend.Model.AdminModel;
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
 import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
+import com.example.ThesisBackend.repository.AdminRepository;
 import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import  com.example.ThesisBackend.adminUtils.*;
 import java.util.*;
 
 /**
@@ -28,7 +30,155 @@ public class AdminService {
     private EventRepository eventRepository;
 
     @Autowired
+    private AdminRepository adminRepository;
+
+    @Autowired
     private JWTService jwtService;
+
+    //get ADMIN
+    public  Optional<AdminModel> getAdminById(String adminId,String token) {
+        try {
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
+            Optional<AdminModel> admin = adminRepository.findById(adminId);
+            if (admin.isPresent()) {
+                System.out.println("✅ Found admin: ");
+            } else {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+            }
+            return  admin;
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //Add Admin
+    public AdminModel createAdmin(AdminModel adminModel, String token){
+
+        try {
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
+            AdminModel saveAdminData = adminRepository.save(adminModel);
+            System.out.println("✅ Admin data created successfully: ");
+            return saveAdminData ;
+
+
+        } catch (Exception e) {
+            System.out.println("❌ Error creating admin data: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    //Add current officer to admin data
+    public AdminModel addOfficer(String adminId, currentOfficer officer, String token){
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
+
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
+            AdminModel adminModel = adminOpt.get();
+            if (adminModel.getCurrentOfficer() == null) {
+                adminModel.setCurrentOfficer(new ArrayList<>());
+            }
+
+            boolean alreadyExists = adminModel.getCurrentOfficer().stream()
+                    .anyMatch(detail -> detail.getStudentName().equalsIgnoreCase(officer.getStudentName()));
+
+            if (alreadyExists) {
+                System.out.println("⚠️ Student already exists in current officer: " + officer.getStudentName());
+                return adminModel;
+            }
+
+            adminModel.getCurrentOfficer().add(officer);
+            adminRepository.save(adminModel);
+
+            System.out.println("✅ Student added by successfully");
+            return adminModel;
+
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error adding officer: ");
+            throw new RuntimeException(e);
+        }
+    }
+
+    //Add admin approval update event data
+    public AdminModel addEventApproval(String adminId,  approvalUpdateEvent approveEvent, String token){
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
+
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
+
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
+            AdminModel adminModel = adminOpt.get();
+            if (adminModel.getApprovalUpdateEvents() == null) {
+                adminModel.setApprovalUpdateEvents(new ArrayList<>());
+            }
+
+            boolean alreadyExists = adminModel.getApprovalUpdateEvents().stream()
+                    .anyMatch(detail -> detail.getId().equalsIgnoreCase(approveEvent.getId()));
+
+            if (alreadyExists) {
+                System.out.println("⚠️ Event already exists in waiting for approval: " + approveEvent.getEventTitle());
+                return adminModel;
+            }
+
+            adminModel.getApprovalUpdateEvents().add(approveEvent);
+            adminRepository.save(adminModel);
+
+            System.out.println("✅ Event approval added by successfully");
+            return adminModel;
+
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error adding approval event: ");
+            throw new RuntimeException(e);
+        }
+    }
+// DELETE current officer
+
+// DELETE approval event
+
+
+
 
     /**
      * 🔔 Retrieve all students’ notification IDs.

@@ -312,6 +312,7 @@ public class EventService {
      * ✅ Add evaluation for an event (STUDENT, OFFICER, or ADMIN)
      */
     public EventModel addEventEvaluation(String eventId, EventEvaluationDetails evaluation, String role) {
+
         try {
             Optional<EventModel> eventOpt = eventRepository.findById(eventId);
             if (eventOpt.isEmpty()) {

@@ -1,5 +1,6 @@
 package com.example.ThesisBackend.admin;
 
+import com.example.ThesisBackend.Model.AdminModel;
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
 import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
@@ -37,6 +38,51 @@ public class AuthController {
     @Autowired private JWTService jwtService;
     @Autowired private StudentService studentService;
     @Autowired private ExpoNotificationService expoNotificationService;
+
+    // ==========================================================================================
+    // 🧾 Admin Access
+    // ==========================================================================================
+
+   //GET admin data
+   @GetMapping("/admin/{id}")
+   public ResponseEntity<?> getEventById(@PathVariable String id, @RequestHeader("Authorization") String authHeader) {
+
+       try {
+           if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+               return ResponseEntity.status(401).body("❌ Missing or invalid token");
+           }
+
+           String token = authHeader.substring(7).trim();
+           var adminOpt = adminService.getAdminById(id, token);
+
+           if (adminOpt.isEmpty()) {
+               return ResponseEntity.status(404).body("❌ Event not found");
+           }
+
+           return ResponseEntity.ok(adminOpt.get());
+       }catch (RuntimeException e) {
+           return ResponseEntity.status(403).body(e.getMessage());
+       }
+   }
+
+   // POST Admin data
+   @PostMapping("/admin")
+    public ResponseEntity<?> createAdminData(@RequestBody AdminModel adminModel, @RequestHeader("Authorization") String authHeader) {
+
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            String token = authHeader.substring(7).trim();
+            AdminModel admin = adminService.createAdmin(adminModel, token);
+            return ResponseEntity.ok(admin);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+
 
     // ==========================================================================================
     // 🧾 AUTHENTICATION
