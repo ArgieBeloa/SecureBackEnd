@@ -7,6 +7,9 @@ import com.example.ThesisBackend.service.EventImageService;
 import com.example.ThesisBackend.service.EventService;
 import com.example.ThesisBackend.security.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +36,7 @@ public class EventController {
 
     // ✅ PUBLIC: Get all events (no authentication needed)
     @GetMapping
+    @Cacheable("eventsCache")
     public ResponseEntity<?> getAllEvents() {
         try {
             List<EventModel> events = eventService.getAllEvents();
@@ -79,6 +83,7 @@ public class EventController {
 
 
     @GetMapping("/{id}")
+    @Cacheable(value = "eventByIdCache", key = "#id")
     public ResponseEntity<?> getEventById(@PathVariable String id) {
         var eventOpt = eventService.getEventById(id);
 
@@ -89,6 +94,7 @@ public class EventController {
         return ResponseEntity.ok(eventOpt.get());
     }
     @GetMapping("/image/{id}")
+    @Cacheable(value = "eventImageCache", key = "#id")
     public ResponseEntity<byte[]> getEventImage(@PathVariable String id) {
         try {
             byte[] imageBytes = eventImageService.getImageById(id);
@@ -108,6 +114,7 @@ public class EventController {
 
     // 🔐 PROTECTED: Create event (only ADMIN or OFFICER)
     @PostMapping("/create")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> createEvent(@RequestBody EventModel event, @RequestHeader("Authorization") String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -124,6 +131,7 @@ public class EventController {
 
 
     @PostMapping("/{eventId}/addAttendance")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> addAttendance(
             @PathVariable String eventId,
             @RequestBody EventAttendance attendance,
@@ -147,6 +155,7 @@ public class EventController {
 
     // 🔐 PROTECTED: Add event evaluation (STUDENT, OFFICER, ADMIN)
     @PostMapping("/{eventId}/addEvaluation")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> addEvaluation(
             @PathVariable String eventId,
             @RequestBody EventEvaluationDetails eventEvaluationDetails,
@@ -204,6 +213,10 @@ public class EventController {
             value = "/{eventId}/upload-image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
+    @CacheEvict(
+            value = {"eventsCache", "eventByIdCache", "eventImageCache"},
+            allEntries = true
+    )
     public ResponseEntity<?> uploadEventImage(
             @PathVariable String eventId,
             @RequestParam("file") MultipartFile file,
@@ -223,6 +236,7 @@ public class EventController {
 
     // 🔐 PROTECTED: Update event (only ADMIN or OFFICER)
     @PutMapping("/{id}")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> updateEvent(
             @PathVariable String id,
             @RequestBody EventModel newEvent,
@@ -251,6 +265,7 @@ public class EventController {
 
     // ✅ PATCH: Update "allStudentAttending" publicly (STUDENT / OFFICER / ADMIN)
     @PatchMapping("/updateAllStudentAttending/{eventId}")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> updateAllStudentAttending(
             @PathVariable String eventId,
             @RequestParam int newCount,
@@ -282,6 +297,7 @@ public class EventController {
 
     // 🔐 PROTECTED: Delete event (only ADMIN)
     @DeleteMapping("/{id}")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
     public ResponseEntity<?> deleteEvent(
             @PathVariable String id,
             @RequestHeader("Authorization") String authHeader) {
