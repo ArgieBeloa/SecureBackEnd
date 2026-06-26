@@ -3,6 +3,8 @@ package com.example.ThesisBackend.Model;
 import com.example.ThesisBackend.eventUtils.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -26,6 +28,8 @@ public class EventModel {
     private String eventDate;
     private String eventTime;
     private String eventTimeLength;
+    private LocalDateTime evaluationStart;
+    private LocalDateTime evaluationEnd;
     private String eventLocation;
     private String eventCategory;  // ✅ renamed field (was 'category')
 
@@ -93,6 +97,21 @@ public class EventModel {
         this.eventBody = eventBody;
     }
 
+    public LocalDateTime getEvaluationEnd() {
+        return evaluationEnd;
+    }
+
+    public void setEvaluationEnd(LocalDateTime evaluationEnd) {
+        this.evaluationEnd = evaluationEnd;
+    }
+
+    public LocalDateTime getEvaluationStart() {
+        return evaluationStart;
+    }
+
+    public void setEvaluationStart(LocalDateTime evaluationStart) {
+        this.evaluationStart = evaluationStart;
+    }
 
     public String getEventDate() {
         return eventDate;

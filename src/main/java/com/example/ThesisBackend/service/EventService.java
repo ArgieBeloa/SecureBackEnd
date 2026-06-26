@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -185,6 +186,8 @@ public class EventService {
             existingEvent.setEventImageId(newEvent.getEventImageId());
             existingEvent.setEventAgendas(newEvent.getEventAgendas());
             existingEvent.setEvaluationQuestions(newEvent.getEvaluationQuestions());
+            existingEvent.setEvaluationStart(newEvent.getEvaluationStart());
+            existingEvent.setEvaluationEnd(newEvent.getEvaluationEnd());
 
             // ❌ Do NOT update:
             // eventAttendances
@@ -327,12 +330,25 @@ public class EventService {
             }
 
             EventModel event = eventOpt.get();
+
+            // Check evaluation schedule
+            LocalDateTime now = LocalDateTime.now();
+
+            if (now.isBefore(event.getEvaluationStart())) {
+                throw new RuntimeException("⏳ Evaluation has not started yet.");
+            }
+
+            if (now.isAfter(event.getEvaluationEnd())) {
+                throw new RuntimeException("⌛ Evaluation period has already ended.");
+            }
+
             if (event.getEventEvaluationDetails() == null) {
                 event.setEventEvaluationDetails(new ArrayList<>());
             }
 
             boolean alreadyExists = event.getEventEvaluationDetails().stream()
-                    .anyMatch(detail -> detail.getStudentName().equalsIgnoreCase(evaluation.getStudentName()));
+                    .anyMatch(detail -> detail.getStudentName()
+                            .equalsIgnoreCase(evaluation.getStudentName()));
 
             if (alreadyExists) {
                 System.out.println("⚠️ Evaluation already exists for student: " + evaluation.getStudentName());
@@ -344,12 +360,12 @@ public class EventService {
 
             System.out.println("✅ Evaluation added by " + role + " for event: " + event.getEventTitle());
             return event;
+
         } catch (Exception e) {
             System.out.println("❌ Error adding evaluation: " + e.getMessage());
             throw e;
         }
     }
-
     // =====================================================
     // 🔴 DELETE
     // =====================================================
