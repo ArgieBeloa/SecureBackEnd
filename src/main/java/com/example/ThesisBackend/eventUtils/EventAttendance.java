@@ -10,15 +10,7 @@ public class EventAttendance {
     private  String role;
     private  String department;
     private  String dateScanned;
-    private LocalDateTime evaluationTime;
 
-    public LocalDateTime getEvaluationTime() {
-        return evaluationTime;
-    }
-
-    public void setEvaluationTime(LocalDateTime evaluationTime) {
-        this.evaluationTime = evaluationTime;
-    }
 
     public String getDateScanned() {
         return dateScanned;
