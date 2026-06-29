@@ -54,6 +54,8 @@ public class EventController {
                 eventData.put("eventDate", event.getEventDate());
                 eventData.put("eventTime", event.getEventTime());
                 eventData.put("eventTimeLength", event.getEventTimeLength());
+                eventData.put("evaluationStart", event.getEvaluationStart());
+                eventData.put("evaluationEnd", event.getEvaluationEnd());
                 eventData.put("eventLocation", event.getEventLocation());
                 eventData.put("eventCategory", event.getEventCategory());
                 eventData.put("allStudentAttending", event.getAllStudentAttending());

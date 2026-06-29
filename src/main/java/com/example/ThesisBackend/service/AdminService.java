@@ -10,6 +10,7 @@ import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import com.example.ThesisBackend.studentUtils.OfficerCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import  com.example.ThesisBackend.adminUtils.*;
 import java.util.*;
@@ -35,6 +36,8 @@ public class AdminService {
 
     @Autowired
     private JWTService jwtService;
+
+    @Autowired private PasswordEncoder passwordEncoder;
 
     //get ADMIN
     public  Optional<AdminModel> getAdminById(String adminId,String token) {
@@ -548,7 +551,7 @@ public EventModel addEventEvaluation(
 
         eventRepository.save(event);
 
-        System.out.println("✅ Evaluation added by "+ event.getEventTitle());
+        System.out.println("✅ Evaluation added by " + event.getEventTitle());
 
         return event;
 
@@ -556,5 +559,29 @@ public EventModel addEventEvaluation(
         System.out.println("❌ Error adding evaluation: " + e.getMessage());
         throw e;
     }
+}
+
+public void resetPasswordStudent(String token, String id){
+
+        try{
+            String cleanToken = token;
+
+//            StudentModel studentModel = studentRepository.findById(id);
+
+                if (token != null && token.startsWith("Bearer ")) {
+                    cleanToken = token.substring(7).trim(); // remove "Bearer "
+                }
+
+                String adminRole = jwtService.getRoleFromToken(cleanToken);
+
+                if("ADMIN".equalsIgnoreCase(adminRole)){
+//                    studentModel.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
+                }else{ 
+                    throw new RuntimeException("🚫 Unauthorized: ONLY admin can reset password");
+                }
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+
 }
 }
