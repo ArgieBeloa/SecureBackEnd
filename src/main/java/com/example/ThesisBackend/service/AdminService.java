@@ -100,7 +100,30 @@ public class AdminService {
 
 
 
-    //Add Admin
+    //Add Student by admin
+    public StudentModel registerStudent(StudentModel student, String token) {
+
+        String cleanToken = token;
+
+        if (cleanToken.startsWith("Bearer ")) {
+            cleanToken = cleanToken.substring(7).trim();
+        }
+
+        String role = jwtService.getRoleFromToken(cleanToken);
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Only ADMIN can register students.");
+        }
+
+        if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
+            throw new RuntimeException("❌ Student already exists");
+        }
+
+        student.setRole("STUDENT");
+        student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
+
+        return studentRepository.save(student);
+    }
 
     //Add current officer to admin data
     public AdminModel addOfficer(String adminId, currentOfficer officer, String token){

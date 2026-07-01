@@ -203,26 +203,53 @@ public class AuthController {
      * ✅ Register a new student.
      * Checks if student number already exists and encrypts password before saving.
      */
+//    @PostMapping("/register")
+//    public ResponseEntity<?> register(@RequestBody StudentModel student,String token ) {
+//
+//        if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
+//            return ResponseEntity.badRequest().body("❌ Student already exists");
+//        }
+//
+//        // Set default role
+//        student.setRole("STUDENT");
+//
+//        // Encrypt password
+//        student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
+//
+//        // Save student
+//
+////        System.out.println("Client IP: " + clientIp+ " Student Name " +student.getStudentName());
+//        studentRepository.save(student);
+//
+//        return ResponseEntity.ok("✅ Student registered successfully");
+//    }
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody StudentModel student, HttpServletRequest request) {
+    public ResponseEntity<?> register(
+            @RequestBody StudentModel student,
+            @RequestHeader("Authorization") String authHeader) {
 
-        if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
-            return ResponseEntity.badRequest().body("❌ Student already exists");
+        try {
+
+            // Check Authorization header
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            // Call service
+            StudentModel registeredStudent = adminService.registerStudent(
+                    student,
+                    authHeader
+            );
+
+            return ResponseEntity.ok(registeredStudent);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("❌ Server error: " + e.getMessage());
         }
-
-        // Set default role
-        student.setRole("STUDENT");
-
-        // Encrypt password
-        student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
-
-        // Save student
-        String clientIp = getClientIp(request);
-
-        System.out.println("Client IP: " + clientIp+ " Student Name " +student.getStudentName());
-        studentRepository.save(student);
-
-        return ResponseEntity.ok("✅ Student registered successfully");
     }
 
     /**
