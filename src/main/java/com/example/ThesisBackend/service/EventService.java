@@ -7,6 +7,7 @@ import com.example.ThesisBackend.eventUtils.EventEvaluationDetails;
 import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
+import com.example.ThesisBackend.studentUtils.StudentEventAttended;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EventService {
@@ -72,6 +74,7 @@ public class EventService {
      * Post service upload attendance add many for optimization
      */
 
+    @Transactional
     public EventModel addMultipleStudentsInEvent(
             String eventId,
             String token,
@@ -79,64 +82,116 @@ public class EventService {
 
         try {
 
+            // Clean token
             String cleanToken = token;
-            if (token != null && token.startsWith("Bearer ")) {
-                cleanToken = token.substring(7).trim();
+            if (cleanToken != null && cleanToken.startsWith("Bearer ")) {
+                cleanToken = cleanToken.substring(7).trim();
             }
 
+            // Validate token
+            if (!jwtService.validateToken(cleanToken)) {
+                throw new RuntimeException("❌ Invalid or expired token.");
+            }
+
+            // Validate role
             String role = jwtService.getRoleFromToken(cleanToken);
 
-            if (!"OFFICER".equalsIgnoreCase(role) &&
-                    !"ADMIN".equalsIgnoreCase(role)) {
-                throw new RuntimeException("Unauthorized.");
+            if (!"OFFICER".equalsIgnoreCase(role)
+                    && !"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized.");
             }
 
+            // Find event
             EventModel event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new RuntimeException("Event not found."));
+                    .orElseThrow(() -> new RuntimeException("❌ Event not found."));
 
             if (event.getEventAttendances() == null) {
                 event.setEventAttendances(new ArrayList<>());
             }
 
+            // Process each attendance
             for (EventAttendance attendance : eventAttendances) {
 
-                // Skip if null
                 if (attendance == null) {
                     continue;
                 }
 
-                // Skip if studentId is null or empty
                 if (attendance.getStudentId() == null ||
                         attendance.getStudentId().trim().isEmpty()) {
                     continue;
                 }
 
-                // Skip if studentName is null or empty
+                if (attendance.getStudentNumber() == null ||
+                        attendance.getStudentNumber().trim().isEmpty()) {
+                    continue;
+                }
+
                 if (attendance.getStudentName() == null ||
                         attendance.getStudentName().trim().isEmpty()) {
                     continue;
                 }
 
-                // Check if already attended
-                boolean alreadyExists = event.getEventAttendances()
-                        .stream()
-                        .anyMatch(a -> a.getStudentId()
-                                .equals(attendance.getStudentId()));
+                // Find student first
+                Optional<StudentModel> studentOpt =
+                        studentRepository.findById(attendance.getStudentId());
 
-                if (alreadyExists) {
+                if (studentOpt.isEmpty()) {
+                    System.out.println("Student not found: " + attendance.getStudentId());
                     continue;
                 }
 
-                // Add student
+                StudentModel student = studentOpt.get();
+
+                // Check if already in Event attendance
+                boolean alreadyInEvent = event.getEventAttendances()
+                        .stream()
+                        .anyMatch(a -> attendance.getStudentId().equals(a.getStudentId()));
+
+                if (alreadyInEvent) {
+                    System.out.println("Already attended: " + attendance.getStudentName());
+                    continue;
+                }
+
+                // Initialize student's event list
+                if (student.getStudentEventAttended() == null) {
+                    student.setStudentEventAttended(new ArrayList<>());
+                }
+
+                // Check if student already has this event
+                boolean alreadyInStudent = student.getStudentEventAttended()
+                        .stream()
+                        .anyMatch(e -> event.getId().equals(e.getEventId()));
+
+                // Add attendance to event
                 event.getEventAttendances().add(attendance);
+
+                // Add event to student if not already present
+                if (!alreadyInStudent) {
+
+                    StudentEventAttended studentEvent = new StudentEventAttended();
+
+                    studentEvent.setEventId(event.getId());
+                    studentEvent.setEventTitle(event.getEventTitle());
+                    studentEvent.setEvaluationTime(event.getEvaluationEnd());
+                    studentEvent.setStudentDateAttended(attendance.getDateScanned());
+                    studentEvent.setEvaluated(false);
+
+                    student.getStudentEventAttended().add(studentEvent);
+                }
+
+                // Save student
+                studentRepository.save(student);
             }
 
+            // Save event once
             return eventRepository.save(event);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error adding students: " + e.getMessage(), e);
+            e.printStackTrace();
+            throw new RuntimeException("❌ Error adding students: " + e.getMessage(), e);
         }
     }
+
     /**
      * ✅ Upload and link an image to an event
      */

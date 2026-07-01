@@ -254,6 +254,7 @@ public class EventController {
                     eventAttendances
             );
 
+
             return ResponseEntity.ok(updatedEvent);
 
         } catch (Exception e) {
