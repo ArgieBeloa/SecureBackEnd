@@ -233,6 +233,35 @@ public class EventController {
         }
     }
 
+    @PostMapping("/{eventId}/addMultipleAttendance")
+    @CacheEvict(value = {"eventsCache", "eventByIdCache"}, allEntries = true)
+    public ResponseEntity<?> addMultipleStudentsInEvent(
+            @PathVariable String eventId,
+            @RequestBody List<EventAttendance> eventAttendances,
+            @RequestHeader("Authorization") String authHeader) {
+
+        try {
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("❌ Missing or invalid token");
+            }
+
+            String token = authHeader.substring(7).trim();
+
+            EventModel updatedEvent = eventService.addMultipleStudentsInEvent(
+                    eventId,
+                    token,
+                    eventAttendances
+            );
+
+            return ResponseEntity.ok(updatedEvent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body("❌ " + e.getMessage());
+        }
+    }
+
 
 
 

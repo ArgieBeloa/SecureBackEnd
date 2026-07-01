@@ -101,29 +101,6 @@ public class AdminService {
 
 
     //Add Admin
-    public AdminModel createAdmin(AdminModel adminModel, String token){
-
-        try {
-            String cleanToken = token;
-            if (token != null && token.startsWith("Bearer ")) {
-                cleanToken = token.substring(7).trim();
-            }
-
-            // 🔍 Validate role from cleaned token
-            String role = jwtService.getRoleFromToken(cleanToken);
-            if (!"ADMIN".equalsIgnoreCase(role)) {
-                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
-            }
-            AdminModel saveAdminData = adminRepository.save(adminModel);
-            System.out.println("✅ Admin data created successfully: ");
-            return saveAdminData ;
-
-
-        } catch (Exception e) {
-            System.out.println("❌ Error creating admin data: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
 
     //Add current officer to admin data
     public AdminModel addOfficer(String adminId, currentOfficer officer, String token){

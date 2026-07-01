@@ -12,6 +12,7 @@ import com.example.ThesisBackend.service.ExpoNotificationService;
 import com.example.ThesisBackend.service.StudentService;
 import com.example.ThesisBackend.studentUtils.StudentEventAttended;
 import com.example.ThesisBackend.studentUtils.StudentNotification;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -83,22 +84,7 @@ public class AuthController {
         }
     }
 
-   // POST Admin data
-   @PostMapping("/admin")
-    public ResponseEntity<?> createAdminData(@RequestBody AdminModel adminModel, @RequestHeader("Authorization") String authHeader) {
 
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(401).body("❌ Missing or invalid token");
-            }
-
-            String token = authHeader.substring(7).trim();
-            AdminModel admin = adminService.createAdmin(adminModel, token);
-            return ResponseEntity.ok(admin);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
-    }
     // ADD New Officer to admin data
     @PostMapping("/admin/addNewOfficer/{id}")
     public ResponseEntity<?> addNewOfficer(@PathVariable String id, @RequestHeader("Authorization") String authHeader, @RequestBody currentOfficer newOfficer){
@@ -219,12 +205,20 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody StudentModel student) {
+
         if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
             return ResponseEntity.badRequest().body("❌ Student already exists");
         }
 
+        // Set default role
+        student.setRole("STUDENT");
+
+        // Encrypt password
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
+
+        // Save student
         studentRepository.save(student);
+
         return ResponseEntity.ok("✅ Student registered successfully");
     }
 
@@ -233,7 +227,7 @@ public class AuthController {
      * Verifies credentials and returns JWT token with user role.
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody StudentModel loginRequest) {
+    public ResponseEntity<?> login(@RequestBody StudentModel loginRequest, HttpServletRequest request) {
         if (loginRequest.getStudentNumber() == null || loginRequest.getStudentPassword() == null) {
             return ResponseEntity.badRequest().body("❌ Missing student number or password");
         }
@@ -254,7 +248,9 @@ public class AuthController {
         response.put("_id", student.getId());
         response.put("role", student.getRole());
         response.put("token", token);
+        String clientIp = getClientIp(request);
 
+        System.out.println("Client IP: " + clientIp);
         return ResponseEntity.ok(response);
     }
 
@@ -527,6 +523,24 @@ public ResponseEntity<?> addEvaluation(
     }
 }
 
+    private String getClientIp(HttpServletRequest request) {
 
+        String ip = request.getHeader("X-Forwarded-For");
+
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+
+        // X-Forwarded-For can contain multiple IPs
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+
+        return ip;
+    }
 
 }
