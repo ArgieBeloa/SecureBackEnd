@@ -204,7 +204,7 @@ public class AuthController {
      * Checks if student number already exists and encrypts password before saving.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody StudentModel student) {
+    public ResponseEntity<?> register(@RequestBody StudentModel student, HttpServletRequest request) {
 
         if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
             return ResponseEntity.badRequest().body("❌ Student already exists");
@@ -217,6 +217,9 @@ public class AuthController {
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
 
         // Save student
+        String clientIp = getClientIp(request);
+
+        System.out.println("Client IP: " + clientIp+ " Student Name " +student.getStudentName());
         studentRepository.save(student);
 
         return ResponseEntity.ok("✅ Student registered successfully");
