@@ -250,7 +250,7 @@ public class AuthController {
         response.put("token", token);
         String clientIp = getClientIp(request);
 
-        System.out.println("Client IP: " + clientIp);
+        System.out.println("Client IP: " + clientIp+ "/n" +student.getStudentName());
         return ResponseEntity.ok(response);
     }
 
