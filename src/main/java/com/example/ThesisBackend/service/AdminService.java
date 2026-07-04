@@ -111,8 +111,8 @@ public class AdminService {
 
         String role = jwtService.getRoleFromToken(cleanToken);
 
-        if (!"ADMIN".equalsIgnoreCase(role)) {
-            throw new RuntimeException("🚫 Only ADMIN can register students.");
+        if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Unauthorized: Only ADMIN or officer can access this endpoint");
         }
 
         if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
@@ -120,6 +120,11 @@ public class AdminService {
         }
 
         student.setRole("STUDENT");
+        student.getOfficerCredentials().setCanAddEvent(false);
+        student.getOfficerCredentials().setCanEditEvent(false);
+        student.getOfficerCredentials().setCanScanStudent(false);
+        student.getOfficerCredentials().setCanAddStudent(false);
+
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
 
         return studentRepository.save(student);

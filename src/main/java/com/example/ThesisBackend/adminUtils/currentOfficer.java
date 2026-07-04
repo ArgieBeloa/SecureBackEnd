@@ -1,13 +1,11 @@
 package com.example.ThesisBackend.adminUtils;
+import  com.example.ThesisBackend.studentUtils.OfficerCredentials;
 
-
-public class currentOfficer {
+public class currentOfficer extends OfficerCredentials{
 
     private String studentId;
     private String studentName;
     private String studentNumber;
-    private Boolean canEditEvent;
-    private Boolean canAddEvent;
 
     public String getStudentId() {
         return studentId;
@@ -23,22 +21,6 @@ public class currentOfficer {
 
     public void setStudentName(String studentName) {
         this.studentName = studentName;
-    }
-
-    public Boolean getCanEditEvent() {
-        return canEditEvent;
-    }
-
-    public void setCanEditEvent(Boolean canEditEvent) {
-        this.canEditEvent = canEditEvent;
-    }
-
-    public Boolean getCanAddEvent() {
-        return canAddEvent;
-    }
-
-    public void setCanAddEvent(Boolean canAddEvent) {
-        this.canAddEvent = canAddEvent;
     }
 
     public String getStudentNumber() {
