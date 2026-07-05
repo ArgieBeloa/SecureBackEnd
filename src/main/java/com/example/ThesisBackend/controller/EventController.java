@@ -255,11 +255,15 @@ public class EventController {
             );
 
 
-            return ResponseEntity.ok(updatedEvent);
+            return ResponseEntity.ok("Attendance uploaded successfully. "+updatedEvent );
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(400).body("❌ " + e.getMessage());
+
+            System.out.println("Exception: " + e.getClass().getName());
+            System.out.println("Message: " + e.getMessage());
+
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

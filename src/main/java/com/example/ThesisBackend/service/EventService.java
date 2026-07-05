@@ -8,6 +8,7 @@ import com.example.ThesisBackend.repository.EventRepository;
 import com.example.ThesisBackend.repository.StudentRepository;
 import com.example.ThesisBackend.security.JWTService;
 import com.example.ThesisBackend.studentUtils.StudentEventAttended;
+import com.example.ThesisBackend.studentUtils.StudentEventAttendedAndEvaluationDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -70,6 +72,7 @@ public class EventService {
             throw e;
         }
     }
+
     /**
      * Post service upload attendance add many for optimization
      */
@@ -160,8 +163,10 @@ public class EventService {
                 // Check if student already has this event
                 boolean alreadyInStudent = student.getStudentEventAttended()
                         .stream()
-                        .anyMatch(e -> event.getId().equals(e.getEventId()));
-
+                        .filter(Objects::nonNull)
+                        .anyMatch(e ->
+                                e.getEventId() != null &&
+                                        e.getEventId().equals(event.getId()));
                 // Add attendance to event
                 event.getEventAttendances().add(attendance);
 
@@ -178,17 +183,84 @@ public class EventService {
 
                     student.getStudentEventAttended().add(studentEvent);
                 }
+                //  Updating student profile attended to true
+                // Initialize if null
+                if (student.getStudentEventAttendedAndEvaluationDetails() == null) {
+                    student.setStudentEventAttendedAndEvaluationDetails(new ArrayList<>());
+                }
+
+                boolean exists = student.getStudentEventAttendedAndEvaluationDetails()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .anyMatch(e ->
+                                e.getEventId() != null &&
+                                        e.getEventId().equals(event.getId()));
+
+                System.out.println("They register? "+exists);
+
+                StudentEventAttendedAndEvaluationDetails details =
+                        student.getStudentEventAttendedAndEvaluationDetails()
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .filter(e -> event.getId().equals(e.getEventId()))
+                                .findFirst()
+                                .orElse(null);
+
+                if (details != null) {
+                    // Update existing
+                    details.setAttended(true);
+                    details.setEvaluated(false);
+                    details.setEventDateAndTime(attendance.getDateScanned());
+
+                    System.out.println("Updated existing record.");
+                } else {
+                    // Create new
+                    details = new StudentEventAttendedAndEvaluationDetails();
+                    details.setEventId(event.getId());
+                    details.setEventTitle(event.getEventTitle());
+                    details.setEventDateAndTime(attendance.getDateScanned());
+                    details.setAttended(true);
+                    details.setEvaluated(false);
+
+                    student.getStudentEventAttendedAndEvaluationDetails().add(details);
+
+                    System.out.println("Added new record.");
+                }
+               //delete to notification if exits
+                if (student.getStudentNotifications() != null) {
+                    student.getStudentNotifications().removeIf(notification ->
+                            notification != null &&
+                                    event.getId().equals(notification.getEventId()));
+                }
 
                 // Save student
+                System.out.println("Processing " + attendance.getStudentName());
+
+                System.out.println("Adding to event...");
+
+                System.out.println("Saving student...");
+
                 studentRepository.save(student);
+
+                System.out.println("Student saved.");
+
+                System.out.println("Saving event...");
             }
 
             // Save event once
-            return eventRepository.save(event);
+            System.out.println("Saving event...");
+            EventModel savedEvent = eventRepository.save(event);
+            System.out.println("Event saved.");
+            return savedEvent;
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("❌ Error adding students: " + e.getMessage(), e);
+
+            System.out.println("ERROR:");
+            System.out.println(e.getClass().getName());
+            System.out.println(e.getMessage());
+
+            throw e;
         }
     }
 
