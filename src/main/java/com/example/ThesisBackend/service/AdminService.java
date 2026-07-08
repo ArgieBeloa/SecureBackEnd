@@ -130,6 +130,20 @@ public class AdminService {
         return studentRepository.save(student);
     }
 
+    public StudentModel registerStudentOpen(StudentModel student) {
+
+        student.setRole("STUDENT");
+        student.getOfficerCredentials().setCanAddEvent(false);
+        student.getOfficerCredentials().setCanEditEvent(false);
+        student.getOfficerCredentials().setCanScanStudent(false);
+        student.getOfficerCredentials().setCanAddStudent(false);
+
+        student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
+        System.out.println("Student adding... "+student.getStudentName());
+        return studentRepository.save(student);
+    }
+
+
     //Add current officer to admin data
     public AdminModel addOfficer(String adminId, currentOfficer officer, String token){
         try {
