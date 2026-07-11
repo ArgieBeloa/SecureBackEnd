@@ -507,7 +507,21 @@ public class AuthController {
         }
     }
 
-    @DeleteMapping("/deleteStudent/{id}")
+    @PutMapping("/admin/updateStudentById/{id}")
+    public ResponseEntity<?> updateStudent(
+            @PathVariable String id,
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody StudentModel studentModel){
+        try{
+            StudentModel updatedStudent = adminService.updateStudentById(id, authHeader, studentModel);
+            return ResponseEntity.ok(updatedStudent);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
+    }
+
+    @DeleteMapping("/admin/deleteStudent/{id}")
     public ResponseEntity<?> deleteStudent(
             @PathVariable String id,
             @RequestHeader("Authorization") String authHeader) {

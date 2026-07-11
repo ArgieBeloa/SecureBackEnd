@@ -37,10 +37,11 @@ public class AdminService {
     @Autowired
     private JWTService jwtService;
 
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     //get ADMIN
-    public  Optional<AdminModel> getAdminById(String adminId,String token) {
+    public Optional<AdminModel> getAdminById(String adminId, String token) {
         try {
             String cleanToken = token;
             if (token != null && token.startsWith("Bearer ")) {
@@ -58,7 +59,7 @@ public class AdminService {
             } else {
                 System.out.println("❌ Admin not found with ID: " + adminId);
             }
-            return  admin;
+            return admin;
 
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
@@ -97,7 +98,6 @@ public class AdminService {
             throw new RuntimeException(e);
         }
     }
-
 
 
     //Add Student by admin
@@ -139,13 +139,13 @@ public class AdminService {
         student.getOfficerCredentials().setCanAddStudent(false);
 
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
-        System.out.println("Student adding... "+student.getStudentName());
+        System.out.println("Student adding... " + student.getStudentName());
         return studentRepository.save(student);
     }
 
 
     //Add current officer to admin data
-    public AdminModel addOfficer(String adminId, currentOfficer officer, String token){
+    public AdminModel addOfficer(String adminId, currentOfficer officer, String token) {
         try {
             Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
             if (adminOpt.isEmpty()) {
@@ -189,7 +189,7 @@ public class AdminService {
     }
 
     //Add admin approval update event data
-    public AdminModel addEventApproval(String adminId,  approvalUpdateEvent approveEvent, String token){
+    public AdminModel addEventApproval(String adminId, approvalUpdateEvent approveEvent, String token) {
         try {
             Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
             if (adminOpt.isEmpty()) {
@@ -231,199 +231,201 @@ public class AdminService {
             throw new RuntimeException(e);
         }
     }
-   //Add new evaluation Template
-   public AdminModel addEvaluationTemplate(String adminId, evaluationTemplate evaluationTemplate, String token){
-       try {
-           Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
-           if (adminOpt.isEmpty()) {
-               System.out.println("❌ Admin not found with ID: " + adminId);
-               return null;
-           }
 
-           String cleanToken = token;
-           if (token != null && token.startsWith("Bearer ")) {
-               cleanToken = token.substring(7).trim();
-           }
+    //Add new evaluation Template
+    public AdminModel addEvaluationTemplate(String adminId, evaluationTemplate evaluationTemplate, String token) {
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
 
-           // 🔍 Validate role from cleaned token
-           String role = jwtService.getRoleFromToken(cleanToken);
-           if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
-               throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
-           }
-           AdminModel adminModel = adminOpt.get();
-           if (adminModel.getEvaluationTemplates() == null) {
-               adminModel.setEvaluationTemplates(new ArrayList<>());
-           }
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
 
-           boolean alreadyExists = adminModel.getEvaluationTemplates().stream()
-                   .anyMatch(detail -> detail.getId().equalsIgnoreCase(evaluationTemplate.getId()));
+            // 🔍 Validate role from cleaned token
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role) && !"OFFICER".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
+            AdminModel adminModel = adminOpt.get();
+            if (adminModel.getEvaluationTemplates() == null) {
+                adminModel.setEvaluationTemplates(new ArrayList<>());
+            }
 
-           if (alreadyExists) {
-               System.out.println("⚠️ Template already exists: " + evaluationTemplate.getTemplateName());
-               return adminModel;
-           }
+            boolean alreadyExists = adminModel.getEvaluationTemplates().stream()
+                    .anyMatch(detail -> detail.getId().equalsIgnoreCase(evaluationTemplate.getId()));
 
-           adminModel.getEvaluationTemplates().add(evaluationTemplate);
-           adminRepository.save(adminModel);
+            if (alreadyExists) {
+                System.out.println("⚠️ Template already exists: " + evaluationTemplate.getTemplateName());
+                return adminModel;
+            }
 
-           System.out.println("✅ Event evaluation template added by successfully");
-           return adminModel;
+            adminModel.getEvaluationTemplates().add(evaluationTemplate);
+            adminRepository.save(adminModel);
 
-       } catch (RuntimeException e) {
-           System.out.println("❌ Error adding approval event: ");
-           throw new RuntimeException(e);
-       }
-   }
-   //DELETE Current Officer
-   public AdminModel deleteCurrentOfficer(String adminId, String studentId, String token) {
-       try {
-           Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
-           if (adminOpt.isEmpty()) {
-               System.out.println("❌ Admin not found with ID: " + adminId);
-               return null;
-           }
+            System.out.println("✅ Event evaluation template added by successfully");
+            return adminModel;
 
-           String cleanToken = token;
-           if (token != null && token.startsWith("Bearer ")) {
-               cleanToken = token.substring(7).trim();
-           }
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error adding approval event: ");
+            throw new RuntimeException(e);
+        }
+    }
 
-           // Validate role
-           String role = jwtService.getRoleFromToken(cleanToken);
-           if (!"ADMIN".equalsIgnoreCase(role)) {
-               throw new RuntimeException("🚫 Unauthorized: Only ADMIN or OFFICER can access this endpoint");
-           }
+    //DELETE Current Officer
+    public AdminModel deleteCurrentOfficer(String adminId, String studentId, String token) {
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
 
-           AdminModel adminModel = adminOpt.get();
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
 
-           if (adminModel.getCurrentOfficer() == null ||
-                   adminModel.getCurrentOfficer().isEmpty()) {
+            // Validate role
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN or OFFICER can access this endpoint");
+            }
 
-               System.out.println("⚠️ No Current officer found.");
-               return adminModel;
-           }
+            AdminModel adminModel = adminOpt.get();
 
-           boolean removed = adminModel.getCurrentOfficer()
-                   .removeIf(template ->
-                           template.getStudentId() != null &&
-                                   template.getStudentId().equalsIgnoreCase(studentId));
+            if (adminModel.getCurrentOfficer() == null ||
+                    adminModel.getCurrentOfficer().isEmpty()) {
 
-           if (!removed) {
-               System.out.println("⚠️ Current officer not found: " + studentId);
-               return adminModel;
-           }
+                System.out.println("⚠️ No Current officer found.");
+                return adminModel;
+            }
 
-           adminRepository.save(adminModel);
+            boolean removed = adminModel.getCurrentOfficer()
+                    .removeIf(template ->
+                            template.getStudentId() != null &&
+                                    template.getStudentId().equalsIgnoreCase(studentId));
 
-           System.out.println("✅ Current Officer deleted successfully");
-           return adminModel;
+            if (!removed) {
+                System.out.println("⚠️ Current officer not found: " + studentId);
+                return adminModel;
+            }
 
-       } catch (RuntimeException e) {
-           System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
-           throw new RuntimeException(e);
-       }
-   }
-   // DELETE Approval Event
-   public AdminModel deleteApprovalEvent(String adminId, String eventId, String token) {
-       try {
-           Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
-           if (adminOpt.isEmpty()) {
-               System.out.println("❌ Admin not found with ID: " + adminId);
-               return null;
-           }
+            adminRepository.save(adminModel);
 
-           String cleanToken = token;
-           if (token != null && token.startsWith("Bearer ")) {
-               cleanToken = token.substring(7).trim();
-           }
+            System.out.println("✅ Current Officer deleted successfully");
+            return adminModel;
 
-           // Validate role
-           String role = jwtService.getRoleFromToken(cleanToken);
-           if (!"ADMIN".equalsIgnoreCase(role)) {
-               throw new RuntimeException("🚫 Unauthorized: Only ADMIN this endpoint");
-           }
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 
-           AdminModel adminModel = adminOpt.get();
+    // DELETE Approval Event
+    public AdminModel deleteApprovalEvent(String adminId, String eventId, String token) {
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
 
-           if (adminModel.getApprovalUpdateEvents() == null ||
-                   adminModel.getApprovalUpdateEvents().isEmpty()) {
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
 
-               System.out.println("⚠️ No Approval event found.");
-               return adminModel;
-           }
+            // Validate role
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN this endpoint");
+            }
 
-           boolean removed = adminModel.getApprovalUpdateEvents()
-                   .removeIf(template ->
-                           template.getId() != null &&
-                                   template.getId().equalsIgnoreCase(eventId));
+            AdminModel adminModel = adminOpt.get();
 
-           if (!removed) {
-               System.out.println("⚠️ Event Approval not found: " + eventId);
-               return adminModel;
-           }
+            if (adminModel.getApprovalUpdateEvents() == null ||
+                    adminModel.getApprovalUpdateEvents().isEmpty()) {
 
-           adminRepository.save(adminModel);
+                System.out.println("⚠️ No Approval event found.");
+                return adminModel;
+            }
 
-           System.out.println("✅ Approval deleted successfully");
-           return adminModel;
+            boolean removed = adminModel.getApprovalUpdateEvents()
+                    .removeIf(template ->
+                            template.getId() != null &&
+                                    template.getId().equalsIgnoreCase(eventId));
 
-       } catch (RuntimeException e) {
-           System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
-           throw new RuntimeException(e);
-       }
-   }
+            if (!removed) {
+                System.out.println("⚠️ Event Approval not found: " + eventId);
+                return adminModel;
+            }
+
+            adminRepository.save(adminModel);
+
+            System.out.println("✅ Approval deleted successfully");
+            return adminModel;
+
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 
 
-   // DELETE Evaluation template
-   public AdminModel deleteEvaluationTemplate(String adminId, String templateId, String token) {
-       try {
-           Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
-           if (adminOpt.isEmpty()) {
-               System.out.println("❌ Admin not found with ID: " + adminId);
-               return null;
-           }
+    // DELETE Evaluation template
+    public AdminModel deleteEvaluationTemplate(String adminId, String templateId, String token) {
+        try {
+            Optional<AdminModel> adminOpt = adminRepository.findById(adminId);
+            if (adminOpt.isEmpty()) {
+                System.out.println("❌ Admin not found with ID: " + adminId);
+                return null;
+            }
 
-           String cleanToken = token;
-           if (token != null && token.startsWith("Bearer ")) {
-               cleanToken = token.substring(7).trim();
-           }
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim();
+            }
 
-           // Validate role
-           String role = jwtService.getRoleFromToken(cleanToken);
-           if (!"ADMIN".equalsIgnoreCase(role)) {
-               throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
-           }
+            // Validate role
+            String role = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+            }
 
-           AdminModel adminModel = adminOpt.get();
+            AdminModel adminModel = adminOpt.get();
 
-           if (adminModel.getEvaluationTemplates() == null ||
-                   adminModel.getEvaluationTemplates().isEmpty()) {
+            if (adminModel.getEvaluationTemplates() == null ||
+                    adminModel.getEvaluationTemplates().isEmpty()) {
 
-               System.out.println("⚠️ No evaluation templates found.");
-               return adminModel;
-           }
+                System.out.println("⚠️ No evaluation templates found.");
+                return adminModel;
+            }
 
-           boolean removed = adminModel.getEvaluationTemplates()
-                   .removeIf(template ->
-                           template.getId() != null &&
-                                   template.getId().equalsIgnoreCase(templateId));
+            boolean removed = adminModel.getEvaluationTemplates()
+                    .removeIf(template ->
+                            template.getId() != null &&
+                                    template.getId().equalsIgnoreCase(templateId));
 
-           if (!removed) {
-               System.out.println("⚠️ Evaluation template not found: " + templateId);
-               return adminModel;
-           }
+            if (!removed) {
+                System.out.println("⚠️ Evaluation template not found: " + templateId);
+                return adminModel;
+            }
 
-           adminRepository.save(adminModel);
+            adminRepository.save(adminModel);
 
-           System.out.println("✅ Evaluation template deleted successfully");
-           return adminModel;
+            System.out.println("✅ Evaluation template deleted successfully");
+            return adminModel;
 
-       } catch (RuntimeException e) {
-           System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
-           throw new RuntimeException(e);
-       }
-   }
-
+        } catch (RuntimeException e) {
+            System.out.println("❌ Error deleting evaluation template: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 
 
     /**
@@ -521,7 +523,7 @@ public class AdminService {
         // ✅ Promote role, but keep same encrypted password
         student.setRole("STUDENT");
 
-        System.out.println("Successfully demoted "+student.getStudentName());
+        System.out.println("Successfully demoted " + student.getStudentName());
 
         // ✅ Save changes
         return studentRepository.save(student);
@@ -536,10 +538,10 @@ public class AdminService {
 
             String adminRole = jwtService.getRoleFromToken(cleanToken);
 
-            if("ADMIN".equalsIgnoreCase(adminRole)){
+            if ("ADMIN".equalsIgnoreCase(adminRole)) {
                 studentRepository.deleteById(id);
                 System.out.println("🗑️ Student deleted with ID: " + id);
-            }else{
+            } else {
                 throw new RuntimeException("🚫 Unauthorized: ONLY admin can delete event");
             }
 
@@ -549,6 +551,43 @@ public class AdminService {
             throw e;
         }
     }
+
+    public StudentModel updateStudentById(String studentId, String token, StudentModel updatedStudent) {
+
+        StudentModel currentDataStudent = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found with id " + studentId));
+
+
+            String cleanToken = token;
+            if (token != null && token.startsWith("Bearer ")) {
+                cleanToken = token.substring(7).trim(); // remove "Bearer "
+            }
+
+            String adminRole = jwtService.getRoleFromToken(cleanToken);
+            if ("ADMIN".equalsIgnoreCase(adminRole)) {
+                currentDataStudent.setStudentName(updatedStudent.getStudentName());
+                currentDataStudent.setStudentNumber(updatedStudent.getStudentNumber());
+                currentDataStudent.setCourse(updatedStudent.getCourse());
+                currentDataStudent.setDepartment(updatedStudent.getDepartment());
+                currentDataStudent.setNotificationId(updatedStudent.getNotificationId());
+                currentDataStudent.setOfficerCredentials(updatedStudent.getOfficerCredentials());
+                currentDataStudent.setStudentUpcomingEvents(updatedStudent.getStudentUpcomingEvents());
+                currentDataStudent.setStudentNotifications(updatedStudent.getStudentNotifications());
+                currentDataStudent.setStudentEventAttendedAndEvaluationDetails(updatedStudent.getStudentEventAttendedAndEvaluationDetails());
+                currentDataStudent.setStudentEventAttended(updatedStudent.getStudentEventAttended());
+                currentDataStudent.setStudentRecentEvaluations(updatedStudent.getStudentRecentEvaluations());
+
+                System.out.println("Saving updated student...");
+
+
+            }
+            else {
+                throw new RuntimeException("🚫 Unauthorized: ONLY admin can update student");
+            }
+        System.out.println("🗑️ Student Updated with ID: " + studentId);
+        return  studentRepository.save(currentDataStudent);
+    }
+
 
 //  public event evaluation (event id and user data )
 public EventModel addEventEvaluation(
