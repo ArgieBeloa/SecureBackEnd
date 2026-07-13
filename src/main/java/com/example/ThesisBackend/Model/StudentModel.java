@@ -2,6 +2,7 @@ package com.example.ThesisBackend.Model;
 
 import com.example.ThesisBackend.studentUtils.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class StudentModel {
     private  String id;
 
     // credentials
+    @Indexed(unique = true)
     private  String studentNumber;
     private String studentPassword;
 
