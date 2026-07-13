@@ -48,7 +48,11 @@ public class SecurityConfig {
                 .cors(cors -> {}) // ✅ Explicitly enable CORS
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login","api/auth/registerOpen").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/registerOpen",
+                                "/api/auth/*/addEvaluation"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
