@@ -252,23 +252,23 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/registerOpen")
-    public ResponseEntity<?> registerOpen(
-            @RequestBody StudentModel student) {
-
-        try {
-            // Call service
-            StudentModel registeredStudent = adminService.registerStudentOpen(student);
-
-            return ResponseEntity.ok(registeredStudent);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("❌ Server error: " + e.getMessage());
-        }
-    }
+//    @PostMapping("/registerOpen")
+//    public ResponseEntity<?> registerOpen(
+//            @RequestBody StudentModel student) {
+//
+//        try {
+//            // Call service
+//            StudentModel registeredStudent = adminService.registerStudentOpen(student);
+//
+//            return ResponseEntity.ok(registeredStudent);
+//
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(500).body("❌ Server error: " + e.getMessage());
+//        }
+//    }
 
 
     /**
