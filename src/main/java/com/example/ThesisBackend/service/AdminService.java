@@ -1,5 +1,5 @@
 package com.example.ThesisBackend.service;
-
+import org.springframework.dao.DuplicateKeyException;
 import com.example.ThesisBackend.Model.AdminModel;
 import com.example.ThesisBackend.Model.EventModel;
 import com.example.ThesisBackend.Model.StudentModel;
@@ -130,17 +130,33 @@ public class AdminService {
         return studentRepository.save(student);
     }
 
+
+
     public StudentModel registerStudentOpen(StudentModel student) {
 
+        if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
+            throw new RuntimeException("❌ Student number already exists.");
+        }
+
         student.setRole("STUDENT");
+
+        if (student.getOfficerCredentials() == null) {
+            student.setOfficerCredentials(new OfficerCredentials());
+        }
+
         student.getOfficerCredentials().setCanAddEvent(false);
         student.getOfficerCredentials().setCanEditEvent(false);
         student.getOfficerCredentials().setCanScanStudent(false);
         student.getOfficerCredentials().setCanAddStudent(false);
 
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
-        System.out.println("Student adding... " + student.getStudentName());
-        return studentRepository.save(student);
+
+        try {
+            return studentRepository.save(student);
+
+        } catch (DuplicateKeyException e) {
+            throw new RuntimeException("❌ Student number already exists.");
+        }
     }
 
 
