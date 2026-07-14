@@ -10,6 +10,7 @@ import com.example.ThesisBackend.security.JWTService;
 import com.example.ThesisBackend.service.AdminService;
 import com.example.ThesisBackend.service.ExpoNotificationService;
 import com.example.ThesisBackend.service.StudentService;
+import com.example.ThesisBackend.studentUtils.ResetPasswordRequest;
 import com.example.ThesisBackend.studentUtils.StudentEventAttended;
 import com.example.ThesisBackend.studentUtils.StudentNotification;
 import jakarta.servlet.http.HttpServletRequest;
@@ -586,6 +587,22 @@ public ResponseEntity<?> addEvaluation(
     }
 }
 
+    @PostMapping("/admin/resetPassword")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request,
+                                           @RequestHeader("Authorization") String token) {
+        try {
+            adminService.resetPasswordStudent(
+                    request.getStudentNumber(),
+                    request.getNewPassword(),
+                    token
+            );
+
+            return ResponseEntity.ok("Password reset successfully.");
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     private String getClientIp(HttpServletRequest request) {
 
         String ip = request.getHeader("X-Forwarded-For");

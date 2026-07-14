@@ -635,27 +635,61 @@ public EventModel addEventEvaluation(
     }
 }
 
-public void resetPasswordStudent(String token, String id){
+    public void resetPasswordStudent(String studentNumber,
+                                     String newPassword,
+                                     String token) {
 
-        try{
+        try {
             String cleanToken = token;
 
-//            StudentModel studentModel = studentRepository.findById(id);
+            if (cleanToken != null && cleanToken.startsWith("Bearer ")) {
+                cleanToken = cleanToken.substring(7).trim();
+            }
 
-                if (token != null && token.startsWith("Bearer ")) {
-                    cleanToken = token.substring(7).trim(); // remove "Bearer "
-                }
+            String role = jwtService.getRoleFromToken(cleanToken);
 
-                String adminRole = jwtService.getRoleFromToken(cleanToken);
+            if (!"ADMIN".equalsIgnoreCase(role)) {
+                System.out.println("🚫 Unauthorized password reset attempt. Role: " + role);
+                throw new RuntimeException("Only ADMIN can reset password.");
+            }
+            System.out.println("Student Number received: [" + studentNumber + "]");
 
-                if("ADMIN".equalsIgnoreCase(adminRole)){
-//                    studentModel.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
-                }else{ 
-                    throw new RuntimeException("🚫 Unauthorized: ONLY admin can reset password");
-                }
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
+            StudentModel student = studentRepository.findByStudentNumber(studentNumber)
+                    .orElseThrow(() -> {
+                        System.out.println("❌ Password reset failed. Student not found: " + studentNumber);
+                        throw new RuntimeException(
+                                "No student exists with student number: " + studentNumber
+                        );
+                    });
+
+            if (studentNumber == null || studentNumber.trim().isEmpty()) {
+                throw new RuntimeException("❌ Student number cannot be empty.");
+            }
+
+            if (newPassword == null || newPassword.trim().isEmpty()) {
+                throw new RuntimeException("❌ New password cannot be empty.");
+            }
+
+            if (newPassword.length() < 6) {
+                throw new RuntimeException("❌ Password must be at least 6 characters long.");
+            }
+
+            student.setStudentPassword(passwordEncoder.encode(newPassword));
+            studentRepository.save(student);
+
+            System.out.println("✅ Password reset successfully!");
+            System.out.println("👤 Student: " + student.getStudentName());
+            System.out.println("🆔 Student Number: " + student.getStudentNumber());
+
+        } catch (Exception e) {
+            System.out.println("❌ Failed to reset password for Student Number: " + studentNumber);
+            System.out.println("Reason: " + e.getMessage());
+            e.printStackTrace();
+
+            throw e;
         }
+    }
 
-}
+
+//end class
 }
