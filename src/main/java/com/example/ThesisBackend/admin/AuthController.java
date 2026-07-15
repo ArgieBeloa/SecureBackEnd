@@ -15,6 +15,7 @@ import com.example.ThesisBackend.studentUtils.StudentEventAttended;
 import com.example.ThesisBackend.studentUtils.StudentNotification;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -250,6 +251,36 @@ public class AuthController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("❌ Server error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/registerMultipleStudents")
+    public ResponseEntity<?> registerMultipleStudents(
+            @RequestBody List<StudentModel> students,
+            @RequestHeader("Authorization") String token) {
+
+        try {
+            List<StudentModel> savedStudents =
+                    adminService.registerMultipleStudents(students, token);
+
+            return ResponseEntity.ok(savedStudents);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage());
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ An unexpected error occurred while registering students.");
         }
     }
 

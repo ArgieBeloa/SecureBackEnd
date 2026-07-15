@@ -4,7 +4,9 @@ import com.example.ThesisBackend.eventUtils.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -28,8 +30,8 @@ public class EventModel {
     private String eventDate;
     private String eventTime;
     private String eventTimeLength;
-    private LocalDateTime evaluationStart;
-    private LocalDateTime evaluationEnd;
+    private Instant evaluationStart;
+    private Instant evaluationEnd;
     private String eventLocation;
     private String eventCategory;  // ✅ renamed field (was 'category')
 
@@ -97,19 +99,20 @@ public class EventModel {
         this.eventBody = eventBody;
     }
 
-    public LocalDateTime getEvaluationEnd() {
+
+    public Instant getEvaluationEnd() {
         return evaluationEnd;
     }
 
-    public void setEvaluationEnd(LocalDateTime evaluationEnd) {
+    public void setEvaluationEnd(Instant evaluationEnd) {
         this.evaluationEnd = evaluationEnd;
     }
 
-    public LocalDateTime getEvaluationStart() {
+    public Instant getEvaluationStart() {
         return evaluationStart;
     }
 
-    public void setEvaluationStart(LocalDateTime evaluationStart) {
+    public void setEvaluationStart(Instant evaluationStart) {
         this.evaluationStart = evaluationStart;
     }
 

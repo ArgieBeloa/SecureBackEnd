@@ -1,15 +1,25 @@
 package com.example.ThesisBackend.studentUtils;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public class StudentEventAttended {
 
     private String eventId;
     private String eventTitle;
-    private LocalDateTime evaluationTime;
+    private Instant evaluationTime;
     private String studentDateAttended;
     private boolean evaluated;
+
+    public Instant getEvaluationTime() {
+        return evaluationTime;
+    }
+
+    public void setEvaluationTime(Instant evaluationTime) {
+        this.evaluationTime = evaluationTime;
+    }
 
     public boolean isEvaluated() {
         return evaluated;
@@ -39,13 +49,7 @@ public class StudentEventAttended {
         return studentDateAttended;
     }
 
-    public LocalDateTime getEvaluationTime() {
-        return evaluationTime;
-    }
 
-    public void setEvaluationTime(LocalDateTime evaluationTime) {
-        this.evaluationTime = evaluationTime;
-    }
 
     public void setStudentDateAttended(String studentDateAttended) {
         this.studentDateAttended = studentDateAttended;

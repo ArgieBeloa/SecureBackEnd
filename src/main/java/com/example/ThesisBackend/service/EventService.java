@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -526,7 +528,7 @@ public class EventService {
             EventModel event = eventOpt.get();
 
             // Check evaluation schedule
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now();
 
             if (now.isBefore(event.getEvaluationStart())) {
                 throw new RuntimeException("⏳ Evaluation has not started yet.");

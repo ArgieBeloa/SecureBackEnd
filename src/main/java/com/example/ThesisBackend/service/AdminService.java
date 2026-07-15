@@ -100,7 +100,7 @@ public class AdminService {
     }
 
 
-    //Add Student by admin
+    // Add Student by admin
     public StudentModel registerStudent(StudentModel student, String token) {
 
         String cleanToken = token;
@@ -128,6 +128,59 @@ public class AdminService {
         student.setStudentPassword(passwordEncoder.encode(student.getStudentPassword()));
 
         return studentRepository.save(student);
+    }
+
+    // add multiple students
+    public List<StudentModel> registerMultipleStudents(List<StudentModel> students, String token) {
+
+        String cleanToken = token;
+
+        if (cleanToken.startsWith("Bearer ")) {
+            cleanToken = cleanToken.substring(7).trim();
+        }
+
+        String role = jwtService.getRoleFromToken(cleanToken);
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new RuntimeException("🚫 Unauthorized: Only ADMIN can access this endpoint");
+        }
+
+        List<StudentModel> savedStudents = new ArrayList<>();
+
+        for (StudentModel student : students) {
+
+            // Skip duplicates
+            if (studentRepository.findByStudentNumber(student.getStudentNumber()).isPresent()) {
+                System.out.println("⚠ Student already exists: " + student.getStudentNumber());
+                System.out.println("⚠ Student name: " + student.getStudentName());
+
+                continue;
+            }
+
+            student.setRole("STUDENT");
+
+            if (student.getOfficerCredentials() == null) {
+                student.setOfficerCredentials(new OfficerCredentials());
+            }
+
+            student.getOfficerCredentials().setCanAddEvent(false);
+            student.getOfficerCredentials().setCanEditEvent(false);
+            student.getOfficerCredentials().setCanScanStudent(false);
+            student.getOfficerCredentials().setCanAddStudent(false);
+
+            student.setStudentPassword(
+                    passwordEncoder.encode(student.getStudentPassword()));
+            student.setNotificationId("");
+            student.setStudentUpcomingEvents(new ArrayList<>());
+            student.setStudentEventAttended(new ArrayList<>());
+            student.setStudentRecentEvaluations(new ArrayList<>());
+            student.setStudentNotifications(new ArrayList<>());
+            student.setStudentEventAttendedAndEvaluationDetails(new ArrayList<>());
+
+            savedStudents.add(studentRepository.save(student));
+        }
+
+        return savedStudents;
     }
 
 
