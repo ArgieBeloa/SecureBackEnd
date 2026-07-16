@@ -1,6 +1,5 @@
 package com.example.ThesisBackend.eventUtils;
 
-import java.time.LocalDateTime;
 
 public class EventAttendance {
 
@@ -11,6 +10,15 @@ public class EventAttendance {
     private  String department;
     private  String dateScanned;
 
+    private String course;
+
+    public String getCourse() {
+        return course;
+    }
+
+    public void setCourse(String course) {
+        this.course = course;
+    }
 
     public String getDateScanned() {
         return dateScanned;
